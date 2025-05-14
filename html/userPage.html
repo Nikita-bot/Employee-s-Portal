@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Page </title>
+    <style type="text/css">
+        *{
+            margin: 0;
+            padding: 0;
+            color:#565656 ;
+            font-weight: 700;
+        }
+
+        body{
+            background-color: #EAEAEA;
+        }
+
+        .hadder{
+            background-color: #FFFFFF;
+            display: flex;
+            height: 100px;
+            padding: 10px;
+        }
+
+        img{
+            width: 75px;
+            height: 75px;
+            margin-top: 10px;
+        }
+
+        .logoText{
+            width: 180px;
+            margin-top: 20px;
+            margin-left: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            position: fixed;
+            left: 90px;
+            top: 9px;
+        }
+
+        .portalName{
+            opacity: 50%;
+            font-size: 15px;
+        }
+
+        .profileMenu{
+            width: 300px;
+            margin-top: 20px;
+            margin-right: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            position: fixed;
+            right: 0px;
+            top: 0;
+            display: flex;
+        }
+        
+
+        .photoProfile{
+            margin-top: 0;
+            margin-right: 30px;
+        }
+
+        .name{
+            font-size: 25px;
+            margin-top: 20px;
+        }
+
+        .container{
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 120px;
+            left: 0;
+            overflow: auto;  
+        }
+        
+        .sideMenu{
+            background-color: #5662DE;
+            width: 250px;
+            height: 100%;
+            text-align: center;
+
+        }
+
+        .menuEl{
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 25px;
+            height: 50px;
+            padding-top: 20px;
+            border-radius: 15px;
+        }
+
+        .menuEl:hover{
+            background-color: #020f9e;
+        }
+
+        .mainBlock{
+            background-color: #FFFFFF;
+            width: 70%;
+            height: 70%;
+            position: absolute;
+            border-radius: 15px;
+            top: 7%;
+            left: 20%;
+            padding: 15px;
+        }
+
+        .infoBlock{
+            display: flex;
+            margin-top: 50px;
+            margin-left: 250px;
+            font-size: 25px;
+        }
+
+        .photoProfileMain{
+            width: 300px;
+            height: 300px;
+        }
+
+        .info{
+            display: flex;
+            margin-left: 50px;
+        }
+        .infoName{
+            margin-right: 20px;
+            text-align: right;
+        }
+
+        .elInfo{
+            margin-top: 15px;
+            color: #5662DE;
+            
+        }
+
+        .elInfo:not(:first-child){
+            margin-top: 50px;
+        }
+
+        .elData{
+            margin-top: 15px;
+        }
+
+        .elData:not(:first-child){
+            margin-top: 50px;
+        }
+
+        .contactsBlock{
+            display: flex;
+            font-size: 25px;
+            margin-top: 50px;
+            margin-left: 250px;
+        }
+
+        .contacts{
+            display: flex;
+            margin-right: 50px;
+            margin-left: 50px;
+        }
+
+        .contactsInfo{
+            margin-right: 20px;
+        }
+
+        .line{
+            width: 2px;
+            height: 90px;
+            background-color: #5662DE;
+            margin-top: 25px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="hadder">
+        <img src="./src/logo.png" alt="">
+        <div class="logoText">
+            <p>ГАУЗ ККБСМБ им. Подгорбунского</p>
+            <p class="portalName">Корпоративный портал</p>
+        </div>
+        <div class="menu"></div>
+        <div class="profileMenu">
+            <img class="photoProfile" src="./src/logo.png" alt="">
+            <p class="name">Иванов И.И.</p>
+
+        </div>
+    </div>
+    <div class="container">
+        <div class="sideMenu">
+            <div class="menuEl">Задачи</div>
+            <div class="menuEl">ЭДО</div>
+            <div class="menuEl">ЭЦП</div>
+            <div class="menuEl">Аналитика</div>
+            <div class="menuEl">Календарь</div>
+            <div class="menuEl">База знаний</div>
+        </div>
+        <div class="mainBlock">
+            <div class="infoBlock">
+                <img class="photoProfileMain" src="./src/logo.png" alt="">
+                <div class="info">
+                    <div class="infoName">
+                        <p class="elInfo">ФИО:</p>
+                        <p class="elInfo">Должность:</p>
+                        <p class="elInfo">Отделение:</p>
+                        <p class="elInfo">Работает с:</p>
+                    </div>
+                    <div class="infoData">
+                        <p class="elData">Иванов Иван Иванович</p>
+                        <p class="elData">Врач-хирург</p>
+                        <p class="elData">Хирургическое отделеиние №1</p>
+                        <p class="elData">20.10.2020</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contactsBlock">
+                <div class="contacts">
+                    <div class="contactsInfo">
+                        <div class="elInfo">Почта:</div>
+                        <div class="elInfo">Телефон:</div>
+                    </div>
+                    <div class="contactsData">
+                        <div class="elData">ivanovii@zimbra.ru</div>
+                        <div class="elData">88005553535</div>
+                    </div>
+                </div>
+                <div class="line"></div>
+                <div class="contacts">
+                    <div class="contactsInfo">
+                        <div class="elInfo">Телеграмм:</div>
+                        <div class="elInfo">Руководитель:</div>
+                    </div>
+                    <div class="contactsData">
+                        <div class="elData">@ivanII</div>
+                        <div class="elData">Петров П.П.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+</body>
+</html>
