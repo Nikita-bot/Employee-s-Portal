@@ -102,7 +102,7 @@ onMounted(async () => {
 <style scoped>
         .mainBlock{
             background-color: #FFFFFF;
-            width: 60%;
+            width: 1000px;
             height: 70%;
             position: absolute;
             border-radius: 15px;
@@ -114,7 +114,7 @@ onMounted(async () => {
         .infoBlock{
             display: flex;
             margin-top: 50px;
-            margin-left: 50px;
+            margin-left: 20px;
             font-size: 25px;
         }
 
@@ -139,7 +139,7 @@ onMounted(async () => {
         }
 
         .elInfo:not(:first-child){
-            margin-top: 50px;
+            margin-top: 30px;
         }
 
         .elData{
@@ -147,14 +147,14 @@ onMounted(async () => {
         }
 
         .elData:not(:first-child){
-            margin-top: 50px;
+            margin-top: 30px;
         }
 
         .contactsBlock{
             display: flex;
             font-size: 25px;
             margin-top: 50px;
-            margin-left: 50px;
+            margin-left: 20px;
         }
 
         .contacts{
@@ -171,6 +171,6 @@ onMounted(async () => {
             width: 2px;
             height: 90px;
             background-color: #5662DE;
-            margin-top: 40px;
+            margin-top: 30px;
         }
 </style>

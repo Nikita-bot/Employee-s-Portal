@@ -31,18 +31,28 @@
   const selectedItem = ref('');
 
   // Определяем, находимся ли мы на странице профиля
-  const isProfilePage = computed(() => route.path === '/user');
+ const updateSelectedItem = () => {
+  if (route.path === '/user') {
+    selectedItem.value = '';
+    return;
+  }
 
-  // Сбрасываем активный элемент при переходе на страницу пользователя
-  watch(() => route.path, (newPath) => {
-    if (newPath === '/user') {
-      selectedItem.value = '';
-    }
-  });
+  const currentItem = menuItems.value.find(item => 
+    route.path.startsWith(item.route)
+  );
+  
+  selectedItem.value = currentItem ? currentItem.name : '';
+};
+
+  // Инициализация при загрузке
+  updateSelectedItem();
+
+  // Следим за изменениями маршрута
+  watch(() => route.path, updateSelectedItem);
 
   const selectMenuItem = (item) => {
-    selectedItem.value = item.name;
     router.push(item.route);
+    // selectedItem теперь обновляется автоматически через watch
   };
 </script>
 
@@ -64,6 +74,7 @@
             padding-top: 5px;
             border-radius: 15px;
             margin-top: 20px;
+            transition: background-color 0.2s;
         }
 
         .menuEl:hover{
