@@ -1,10 +1,21 @@
 package repository
 
-type (
-	DepartmentRepository interface{}
-	departmentRepo       struct{}
+import (
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
-func NewDepartmentRepo() DepartmentRepository {
-	return &departmentRepo{}
+type (
+	DepartmentRepository interface{}
+	departmentRepo       struct {
+		db *sqlx.DB
+		l  *zap.Logger
+	}
+)
+
+func NewDepartmentRepo(db *sqlx.DB, l *zap.Logger) DepartmentRepository {
+	return &departmentRepo{
+		db: db,
+		l:  l,
+	}
 }

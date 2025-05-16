@@ -16,11 +16,11 @@ type Repository struct {
 
 func NewRepository(db *sqlx.DB, l *zap.Logger) Repository {
 	return Repository{
-		UserRepo:       NewUserRepo(),
-		UserTaskRepo:   NewUserTaskRepo(),
-		TaskRepo:       NewTaskRepo(),
-		RoleRepo:       NewRoleRepo(),
-		DepartmentRepo: NewDepartmentRepo(),
-		CommentRepo:    NewCommentRepo(),
+		UserRepo:       NewUserRepo(db, l),
+		UserTaskRepo:   NewUserTaskRepo(db, l),
+		TaskRepo:       NewTaskRepo(db, l),
+		RoleRepo:       NewRoleRepo(db, l),
+		DepartmentRepo: NewDepartmentRepo(db, l),
+		CommentRepo:    NewCommentRepo(db, l),
 	}
 }

@@ -17,11 +17,11 @@ type Service struct {
 
 func NewService(l *zap.Logger, r repository.Repository) Service {
 	return Service{
-		UserService:       NewUserService(),
-		UserTaskService:   NewUserTaskService(),
-		TaskService:       NewTaskService(),
-		RoleService:       NewRoleService(),
-		DepartmentService: NewDepartmentService(),
-		CommentService:    NewCommentService(),
+		UserService:       NewUserService(r.UserRepo, l),
+		UserTaskService:   NewUserTaskService(r.UserTaskRepo, l),
+		TaskService:       NewTaskService(r.TaskRepo, l),
+		RoleService:       NewRoleService(r.RoleRepo, l),
+		DepartmentService: NewDepartmentService(r.DepartmentRepo, l),
+		CommentService:    NewCommentService(r.CommentRepo, l),
 	}
 }

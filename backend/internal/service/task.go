@@ -1,10 +1,22 @@
 package service
 
-type (
-	TaskService interface{}
-	taskService struct{}
+import (
+	"portal/internal/repository"
+
+	"go.uber.org/zap"
 )
 
-func NewTaskService() TaskService {
-	return &taskService{}
+type (
+	TaskService interface{}
+	taskService struct {
+		r repository.TaskRepository
+		l *zap.Logger
+	}
+)
+
+func NewTaskService(r repository.TaskRepository, l *zap.Logger) TaskService {
+	return &taskService{
+		r: r,
+		l: l,
+	}
 }

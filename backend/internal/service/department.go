@@ -1,10 +1,22 @@
 package service
 
-type (
-	DepartmentService interface{}
-	departmentService struct{}
+import (
+	"portal/internal/repository"
+
+	"go.uber.org/zap"
 )
 
-func NewDepartmentService() DepartmentService {
-	return &departmentService{}
+type (
+	DepartmentService interface{}
+	departmentService struct {
+		r repository.DepartmentRepository
+		l *zap.Logger
+	}
+)
+
+func NewDepartmentService(r repository.DepartmentRepository, l *zap.Logger) DepartmentService {
+	return &departmentService{
+		r: r,
+		l: l,
+	}
 }

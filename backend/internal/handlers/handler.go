@@ -23,12 +23,12 @@ type Handler struct {
 func NewHandler(l *zap.Logger, c config.Config, s service.Service) *Handler {
 	return &Handler{
 		conf:              c,
-		UserHandler:       NewUserHandler(),
-		UserTaskHandler:   NewTaskHandler(),
-		TaskHandler:       NewTaskHandler(),
-		RoleHandler:       NewRoleHandler(),
-		DepartmentHandler: NewDepartmentHandler(),
-		CommentHandler:    NewCommentHandler(),
+		UserHandler:       NewUserHandler(s.UserService, l),
+		UserTaskHandler:   NewTaskHandler(s.UserTaskService, l),
+		TaskHandler:       NewTaskHandler(s.TaskService, l),
+		RoleHandler:       NewRoleHandler(s.RoleService, l),
+		DepartmentHandler: NewDepartmentHandler(s.DepartmentService, l),
+		CommentHandler:    NewCommentHandler(s.CommentService, l),
 	}
 }
 

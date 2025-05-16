@@ -1,10 +1,21 @@
 package repository
 
-type (
-	CommetRepository interface{}
-	commentRepo      struct{}
+import (
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
-func NewCommentRepo() CommetRepository {
-	return &commentRepo{}
+type (
+	CommetRepository interface{}
+	commentRepo      struct {
+		db *sqlx.DB
+		l  *zap.Logger
+	}
+)
+
+func NewCommentRepo(db *sqlx.DB, l *zap.Logger) CommetRepository {
+	return &commentRepo{
+		db: db,
+		l:  l,
+	}
 }

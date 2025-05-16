@@ -1,10 +1,22 @@
 package handlers
 
-type (
-	CommentHandler interface{}
-	commentHandler struct{}
+import (
+	"portal/internal/service"
+
+	"go.uber.org/zap"
 )
 
-func NewCommentHandler() CommentHandler {
-	return &commentHandler{}
+type (
+	CommentHandler interface{}
+	commentHandler struct {
+		s service.CommentService
+		l *zap.Logger
+	}
+)
+
+func NewCommentHandler(s service.CommentService, l *zap.Logger) CommentHandler {
+	return &commentHandler{
+		s: s,
+		l: l,
+	}
 }

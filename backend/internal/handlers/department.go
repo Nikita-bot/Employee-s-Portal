@@ -1,10 +1,22 @@
 package handlers
 
-type (
-	DepartmentHandler interface{}
-	departmentHandler struct{}
+import (
+	"portal/internal/service"
+
+	"go.uber.org/zap"
 )
 
-func NewDepartmentHandler() DepartmentHandler {
-	return &departmentHandler{}
+type (
+	DepartmentHandler interface{}
+	departmentHandler struct {
+		s service.DepartmentService
+		l *zap.Logger
+	}
+)
+
+func NewDepartmentHandler(s service.DepartmentService, l *zap.Logger) DepartmentHandler {
+	return &departmentHandler{
+		s: s,
+		l: l,
+	}
 }

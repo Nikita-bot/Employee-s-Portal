@@ -1,10 +1,22 @@
 package handlers
 
-type (
-	TaskHandler interface{}
-	taskHandler struct{}
+import (
+	"portal/internal/service"
+
+	"go.uber.org/zap"
 )
 
-func NewTaskHandler() TaskHandler {
-	return &taskHandler{}
+type (
+	TaskHandler interface{}
+	taskHandler struct {
+		s service.TaskService
+		l *zap.Logger
+	}
+)
+
+func NewTaskHandler(s service.TaskService, l *zap.Logger) TaskHandler {
+	return &taskHandler{
+		s: s,
+		l: l,
+	}
 }

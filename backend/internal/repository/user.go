@@ -1,12 +1,23 @@
 package repository
 
+import (
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
+)
+
 type (
 	UserRepository interface {
 	}
 
-	userRepo struct{}
+	userRepo struct {
+		db *sqlx.DB
+		l  *zap.Logger
+	}
 )
 
-func NewUserRepo() UserTaskRepository {
-	return &userRepo{}
+func NewUserRepo(db *sqlx.DB, l *zap.Logger) UserTaskRepository {
+	return &userRepo{
+		db: db,
+		l:  l,
+	}
 }
