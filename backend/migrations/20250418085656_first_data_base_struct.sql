@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS comments(
     creation_date DATE
 );
 
-CREATE IF NOT EXISTS task_journal(
+CREATE TABLE IF NOT EXISTS task_journal(
     user_task_id INT REFERENCES user_task(id),
     action VARCHAR,
     creation_date DATE

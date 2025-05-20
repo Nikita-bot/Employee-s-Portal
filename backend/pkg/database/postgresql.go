@@ -5,6 +5,7 @@ import (
 	"portal/pkg/config"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
