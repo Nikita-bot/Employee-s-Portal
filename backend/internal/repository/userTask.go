@@ -1,13 +1,20 @@
 package repository
 
 import (
+	"portal/internal/entity"
+
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
 type (
-	UserTaskRepository interface{}
-	userTaskRepo       struct {
+	UserTaskRepository interface {
+		TaskForUser(userId int) ([]entity.UserTask, error)
+		TaskByUser(userId int) ([]entity.UserTask, error)
+		CreateTask(uc entity.UserTaskCreate) error
+		GetTaskByID(id int) (entity.UserTask, error)
+	}
+	userTaskRepo struct {
 		db *sqlx.DB
 		l  *zap.Logger
 	}
@@ -18,4 +25,71 @@ func NewUserTaskRepo(db *sqlx.DB, l *zap.Logger) UserTaskRepository {
 		db: db,
 		l:  l,
 	}
+}
+
+func (u userTaskRepo) TaskForUser(userId int) ([]entity.UserTask, error) {
+	u.l.Debug("IN USER TASK REPO :: GET TASK CREATED BY USER")
+
+	var ut []entity.UserTask
+
+	query := `
+		SELECT * FROM user_task WHERE initiator=$1
+	`
+
+	err := u.db.Select(&ut, query, userId)
+	if err != nil {
+		u.l.Error(err.Error())
+		return nil, err
+	}
+
+	return ut, nil
+}
+
+func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
+	u.l.Debug("IN USER TASK REPO :: GET TASK CREATED FOR USER")
+
+	var ut []entity.UserTask
+
+	query := `
+		SELECT * FROM user_task WHERE executor=$1
+	`
+
+	err := u.db.Select(&ut, query, userId)
+	if err != nil {
+		u.l.Error(err.Error())
+		return nil, err
+	}
+
+	return ut, nil
+}
+
+func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
+	u.l.Debug("IN USER TASK REPO :: CREATE TASK")
+
+	_, err := u.db.NamedExec(`INSERT INTO user_task (task_id,executor,initiator, description,status,create_date,execute_date)
+	VALUES (:task_id, :executor, :initiator, :description, :status, :create_date, :execute_date)`, uc)
+	if err != nil {
+		u.l.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
+	u.l.Debug("IN USER TASK REPO :: GET TASK BY ID")
+
+	query := `
+		SELECT * FROM user_task WHERE id=$1
+	`
+
+	var ut entity.UserTask
+
+	err := u.db.Get(&ut, query, id)
+	if err != nil {
+		u.l.Error(err.Error())
+		return entity.UserTask{}, err
+	}
+
+	return ut, nil
 }

@@ -1,13 +1,19 @@
 package service
 
 import (
+	"portal/internal/entity"
 	"portal/internal/repository"
 
 	"go.uber.org/zap"
 )
 
 type (
-	UserTaskService interface{}
+	UserTaskService interface {
+		TaskForUser(userId int) ([]entity.UserTask, error)
+		TaskByUser(userId int) ([]entity.UserTask, error)
+		CreateTask(uc entity.UserTaskCreate) error
+		GetTaskByID(id int) (entity.UserTask, error)
+	}
 	userTaskService struct {
 		r repository.UserTaskRepository
 		l *zap.Logger
@@ -19,4 +25,49 @@ func NewUserTaskService(r repository.UserTaskRepository, l *zap.Logger) UserTask
 		r: r,
 		l: l,
 	}
+}
+
+func (u userTaskService) TaskForUser(userId int) ([]entity.UserTask, error) {
+	u.l.Debug("IN USER TASK SERVICE :: GET TASK CREATED FOR USER")
+
+	ut, err := u.r.TaskForUser(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return ut, nil
+}
+
+func (u userTaskService) TaskByUser(userId int) ([]entity.UserTask, error) {
+	u.l.Debug("IN USER TASK SERVICE :: GET TASK CREATED BY USER")
+
+	ut, err := u.r.TaskByUser(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return ut, nil
+}
+
+func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
+	u.l.Debug("IN USER TASK SERVICE :: CREATE TASK")
+
+	err := u.r.CreateTask(uc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u userTaskService) GetTaskByID(id int) (entity.UserTask, error) {
+	u.l.Debug("IN USER TASK SERVICE :: GET TASK BY ID")
+
+	ut, err := u.r.GetTaskByID(id)
+	if err != nil {
+		return entity.UserTask{}, err
+	}
+
+	return ut, nil
+
 }

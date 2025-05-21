@@ -21,7 +21,7 @@ func NewHandler(l *zap.Logger, s service.Service, e *echo.Echo) *Handler {
 	return &Handler{
 		e:                 e,
 		UserHandler:       NewUserHandler(s.UserService, l, e),
-		UserTaskHandler:   NewTaskHandler(s.UserTaskService, l, e),
+		UserTaskHandler:   NewUserTaskHandler(s.UserTaskService, l, e),
 		TaskHandler:       NewTaskHandler(s.TaskService, l, e),
 		RoleHandler:       NewRoleHandler(s.RoleService, l, e),
 		DepartmentHandler: NewDepartmentHandler(s.DepartmentService, l, e),
