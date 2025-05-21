@@ -5,13 +5,13 @@ services:
   portal_database:
     image: postgres:14-alpine
     container_name: portal_database
-    # restart: always
+    restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - /var/lib/portal_database_data:/var/lib/portal_database_data
+      - portal_db_data:/var/lib/postgresql/data
     ports:
       - ${DB_PORT}:${DB_DOCKER_PORT}
     networks:
@@ -32,7 +32,11 @@ services:
       - portal_database
     networks:
       - portal_network
-  
+
+volumes:
+  portal_db_data:
+    driver: local
+
 networks:
   default: 
     driver: bridge

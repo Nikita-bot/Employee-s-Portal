@@ -17,7 +17,7 @@ type (
 		Snyls          string     `json:"snyls" db:"snyls"`
 		Adress         string     `json:"adress" db:"adress"`
 		EmploymentDate string     `json:"employment_date" db:"employment_date"`
-		DissmissalDate string     `json:"dissmissal_date" db:"dissmissal_date"`
+		DissmissalDate string     `json:"dismissal_date" db:"dismissal_date"`
 	}
 
 	UserCreate struct {
@@ -36,6 +36,6 @@ type (
 		Snyls          string `json:"snyls" db:"snyls"`
 		Adress         string `json:"adress" db:"adress"`
 		EmploymentDate string `json:"employment_date" db:"employment_date"`
-		DissmissalDate string `json:"dissmissal_date" db:"dissmissal_date"`
+		DissmissalDate string `json:"dismissal_date" db:"dismissal_date"`
 	}
 )
