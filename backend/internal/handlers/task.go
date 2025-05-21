@@ -27,9 +27,20 @@ func NewTaskHandler(s service.TaskService, l *zap.Logger, e *echo.Echo) TaskHand
 }
 
 func (th taskHandler) Handle() {
-	th.e.GET("/tasks", th.getAllTask)
+	th.e.GET("/api/v1/tasks", th.getAllTask)
 }
 
 func (th taskHandler) getAllTask(c echo.Context) error {
-	return c.String(200, "Получи все таски ")
+	th.l.Debug("IN TASK LIST HANDLER :: GET ALL TASK")
+
+	var response = make(map[string]interface{})
+
+	tl, err := th.s.GetAllTask()
+	if err != nil {
+		return c.String(501, err.Error())
+	}
+
+	response["task_list"] = tl
+
+	return c.JSON(200, response)
 }
