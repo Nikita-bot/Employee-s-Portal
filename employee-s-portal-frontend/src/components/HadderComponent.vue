@@ -7,21 +7,30 @@
     </div>
     <div class="profileMenu" @click="handleProfileClick">
       <img class="photoProfile" :src="logo" alt="Профиль">
-      <p class="name">{{ userName }}</p>
+      <p class="name">{{ formattedUserName }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 import logo from '@/assets/logo.png';
 
 const router = useRouter();
+const userStore = useUserStore();
 
-const orgName = ref('ГАУЗ ККБСМБ им. Подгорбунского');
-const portalName = ref('Корпоративный портал');
-const userName = ref('Иванов И.И.');
+const orgName = 'ГАУЗ ККБСМБ им. Подгорбунского';
+const portalName = 'Корпоративный портал';
+
+// Форматируем имя пользователя
+const formattedUserName = computed(() => {
+  if (!userStore.userData) return 'Гость';
+  
+  const { surname, name, patronymic } = userStore.userData;
+  return `${surname} ${name?.charAt(0) || ''}.${patronymic?.charAt(0) || ''}.`;
+});
 
 const handleProfileClick = () => {
   router.push('/user');

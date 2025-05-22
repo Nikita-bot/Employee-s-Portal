@@ -41,9 +41,11 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 import logo from '@/assets/logo.png'; 
 
 const router = useRouter();
+const userStore = useUserStore();
 
 const orgName = 'ГАУЗ ККБСМБ им. Подгорбунского';
 const portalName = 'Корпоративный портал';
@@ -64,9 +66,28 @@ const handleLogin = async () => {
   isLoading.value = true;
   
   try {
-    // const response = await authService.login(loginForm.value);
-    
-    router.push('/tasks'); // Перенаправляем на страницу задач
+    const formData = new FormData();
+    formData.append('login', loginForm.value.username);
+    formData.append('password', loginForm.value.password);
+
+    const response = await fetch('http://localhost:8080/api/v1/auth', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка авторизации');
+    }
+
+    const data = await response.json();
+
+    if (data.user) {
+      userStore.setUserData(JSON.parse(JSON.stringify(data.user)));
+      console.log('Сохранённые данные:', JSON.parse(JSON.stringify(userStore.userData)))
+      router.push('/user'); 
+    } else {
+      throw new Error('Неверные учетные данные');
+    }
   } catch (error) {
     console.error('Ошибка авторизации:', error);
     alert('Неверный логин или пароль');

@@ -25,6 +25,7 @@
     { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
     { name: 'analytics', title: 'Аналитика', route: '/analytics' },
     { name: 'calendar', title: 'Календарь', route: '/calendar' },
+    { name: 'portals', title: 'Порталы', route: '/potals' },
     { name: 'knowledge', title: 'База знаний', route: '/knowledge' }
   ]);
 

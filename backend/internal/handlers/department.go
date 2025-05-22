@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"portal/internal/service"
+	"strconv"
 
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
@@ -27,9 +28,25 @@ func NewDepartmentHandler(s service.DepartmentService, l *zap.Logger, e *echo.Ec
 }
 
 func (dh departmentHandler) Handle() {
-	dh.e.GET("/depatments", dh.getAllDepartments)
+	dh.e.GET("/api/v1/depatments/user/:dep_id", dh.GetUsersOnDepaertmets)
 }
 
-func (dh departmentHandler) getAllDepartments(c echo.Context) error {
-	return c.String(200, "Получи все отделения")
+func (dh departmentHandler) GetUsersOnDepaertmets(c echo.Context) error {
+	dh.l.Info("IN DEPARTMENT HANDLER :: GET USER ON DEPARTMENT")
+
+	var request = make(map[string]interface{})
+
+	id, err := strconv.Atoi(c.Param("dep_id"))
+	if err != nil {
+		return c.String(400, "ID MUST BE INT")
+	}
+
+	user, err := dh.s.GetUsersByDepId(id)
+	if err != nil {
+		return c.JSON(401, err.Error())
+	}
+
+	request["users"] = user
+
+	return c.JSON(200, request)
 }

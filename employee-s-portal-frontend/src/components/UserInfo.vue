@@ -43,7 +43,7 @@
         </div>
         <div class="contactsData">
           <!-- Динамические данные -->
-          <div class="elData" ><a href="https://t.me/">{{ userData.contacts.telegram }}</a></div>
+          <div class="elData" ><a v-if="userData.contacts.telegram"  :href="`https://t.me/${userData.contacts.telegram}`" target="_blank">{{ userData.contacts.telegram }}</a><span v-else>Не указан</span></div>
           <div class="elData">{{ userData.contacts.manager }}</div>
         </div>
       </div>
@@ -52,51 +52,48 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useUserStore } from '@/stores/user';
 import logo from '@/assets/logo.png';
 
-// Начальное состояние данных
-const userData = ref({
-  fullName: '',
-  position: '',
-  department: '',
-  employmentDate: '',
-  contacts: {
-    email: '',
-    phone: '',
-    telegram: '',
-    manager: ''
-  }
+const userStore = useUserStore();
+
+// Вычисляемые свойства для форматирования данных
+const userData = computed(() => {
+  if (!userStore.userData) return {
+    fullName: '',
+    position: '',
+    department: '',
+    employmentDate: '',
+    contacts: {
+      email: '',
+      phone: '',
+      telegram: '',
+      manager: ''
+    }
+  };
+
+  return {
+    fullName: `${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`,
+    position: userStore.userData.position,
+    department: userStore.userData.department?.name || '',
+    employmentDate: formatDate(userStore.userData.employment_date),
+    contacts: {
+      email: userStore.userData.email,
+      phone: userStore.userData.phone,
+      telegram: userStore.userData.tg_link,
+      manager: 'Петров П.П.' // Здесь можно добавить логику для получения руководителя
+    }
+  };
 });
 
-// Моковые данные JSON (замените на реальный API-запрос)
-const mockUserData = {
-  fullName: 'Иванов Иван Иванович',
-  position: 'Врач-хирург',
-  department: 'Хирургическое отделение №1',
-  employmentDate: '20.10.2020',
-  contacts: {
-    email: 'ivanovii@zimbra.ru',
-    phone: '88005553535',
-    telegram: '@ivanII',
-    manager: 'Петров П.П.'
-  }
+// Функция для форматирования даты
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ru-RU');
 };
 
-
-// Эмуляция загрузки данных
-const fetchUserData = async () => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(mockUserData);
-    }, 500);
-  });
-};
-
-
-onMounted(async () => {
-  userData.value = await fetchUserData();
-});
 </script>
 
 <style scoped>
@@ -161,6 +158,10 @@ onMounted(async () => {
             display: flex;
             margin-right: 50px;
             margin-left: 50px;
+        }
+
+        .contacts:not(:first-child){
+          margin-right: 0;
         }
 
         .contactsInfo{

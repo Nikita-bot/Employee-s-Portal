@@ -62,7 +62,26 @@ func (u userRepo) GetUserByLogin(login string) (entity.User, error) {
 		return entity.User{}, err
 	}
 
+	department := u.GetDepartmentByUserID(user.ID)
+	user.Department = department
+
 	return user, nil
+}
+
+func (u userRepo) GetDepartmentByUserID(id int) entity.Department {
+
+	var department entity.Department
+
+	query := `
+		SELECT d.id, d.name FROM departments d, users u WHERE u.department_id = d.id AND u.id=$1
+	`
+	err := u.db.Get(&department, query, id)
+	if err != nil {
+		return entity.Department{}
+	}
+
+	return department
+
 }
 
 func (u userRepo) GetUserByID(id int) (entity.User, error) {
@@ -82,6 +101,9 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 		u.l.Error(err.Error())
 		return entity.User{}, err
 	}
+
+	department := u.GetDepartmentByUserID(user.ID)
+	user.Department = department
 
 	return user, nil
 }

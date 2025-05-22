@@ -54,6 +54,10 @@ const routes = [
     component: UserPage 
   },
   {
+    path: '/potals', // Ловит любой несоответствующий маршрут
+    component: UserPage 
+  },
+  {
     path: '/:pathMatch(.*)*', // Ловит любой несоответствующий маршрут
     redirect: '/tasks' 
   },

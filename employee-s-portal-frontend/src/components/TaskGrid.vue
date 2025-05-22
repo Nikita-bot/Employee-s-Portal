@@ -237,122 +237,155 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useUserStore } from '@/stores/user';
 
+const userStore = useUserStore();
+
+// Состояния
 const activeTab = ref('assigned');
 const selectedTask = ref(null);
 const newComment = ref('');
-
 const sortField = ref('');
 const sortDirection = ref('asc');
 const isCreateModalOpen = ref(false);
+const isLoading = ref(false);
 
+// Данные для создания задачи
 const newTask = ref({
-  type: '',
-  executor: ''
+  task_id: 1,
+  executor: '',
+  description: '',
+  status: 1,
+  create_date: new Date().toISOString().split('T')[0],
+  execute_date: ''
 });
+
 const newTaskComment = ref('');
-
 const taskTypes = ref([
-  { value: 'review', label: 'Проверить отчет' },
-  { value: 'add_user', label: 'Добавить пользователя' },
-  { value: 'update', label: 'Обновить данные' },
-  { value: 'other', label: 'Другое' }
+  { value: 1, label: 'Проверить отчет' },
+  { value: 2, label: 'Добавить пользователя' },
+  { value: 3, label: 'Обновить данные' },
+  { value: 4, label: 'Другое' }
 ]);
 
-// Список пользователей (можно заменить на данные с сервера)
-const users = ref([
-  { id: 1, name: 'Петров П.П.', position: 'Руководитель' },
-  { id: 2, name: 'Сулима Р.И.', position: 'Разработчик' },
-  { id: 3, name: 'Иванов И.И.', position: 'Аналитик' }
-]);
-// Пример данных с комментариями
-const tasksData = ref({
-  assigned: [
-    {
-      id: 32156,
-      author: 'Петров П.П.',
-      executor: 'Сулима Р.И.',
-      description: 'Добавить пользователя в МИС',
-      status: 'Выполнено',
-      createdDate: '29.04.2025',
-      assignedDate: '29.04.2025',
-      comments: [
-        {
-          id: 1,
-          author: 'Сулима Р.И.',
-          text: 'Задача выполнена',
-          date: '29.04.2025 15:30'
-        }
-      ]
-    },
-    {
-      id: 32154,
-      author: 'Петров П.F.',
-      executor: 'Сулима Р.И.',
-      description: 'Добавить пользователя в МИС',
-      status: 'В работе',
-      createdDate: '29.04.2025',
-      assignedDate: '',
-      comments: [
-        {
-          id: 1,
-          author: 'Сулима Р.И.',
-          text: 'Задача Невыполнима !!!!',
-          date: '29.04.2025 15:30'
-        }
-      ]
+const users = ref([]);
+const tasks = ref({
+  assigned: [],
+  created: []
+});
+
+/* Новые функции для работы с API */
+
+const fetchTasks = async () => {
+  isLoading.value = true;
+  try {
+    const response = await fetch(`/api/v1/tasks/user/${userStore.userData.id}`);
+    if (!response.ok) throw new Error('Ошибка загрузки задач');
+    
+    const data = await response.json();
+    tasks.value.assigned = data.executor || [];
+    tasks.value.created = data.initiator || [];
+    
+    // Загрузка пользователей (можно вынести в отдельный метод)
+    const usersResponse = await fetch('/api/v1/users');
+    if (usersResponse.ok) {
+      users.value = await usersResponse.json();
     }
-  ],
-  created: [
-    {
-      id: 32158,
-      author: 'Иванов И.И.',
-      executor: 'Петров П.П.',
-      description: 'Проверить отчет',
-      status: 'Новая',
-      createdDate: '03.05.2025',
-      assignedDate: '03.05.2025',
-      comments: []
-    }
-  ]
+  } catch (error) {
+    console.error('Ошибка загрузки задач:', error);
+    alert('Не удалось загрузить задачи');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const fetchTaskById = async (id) => {
+  try {
+    const response = await fetch(`/api/v1/tasks/${id}`);
+    if (!response.ok) throw new Error('Ошибка загрузки задачи');
+    const data = await response.json();
+    return data.task;
+  } catch (error) {
+    console.error('Ошибка загрузки задачи:', error);
+    alert('Не удалось загрузить задачу');
+    return null;
+  }
+};
+
+const createNewTask = async () => {
+  if (!newTask.value.executor || !newTask.value.description) {
+    alert('Пожалуйста, заполните все обязательные поля');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/v1/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...newTask.value,
+        initiator: userStore.userData.id,
+        description: newTask.value.description + (newTaskComment.value ? `\nКомментарий: ${newTaskComment.value}` : '')
+      })
+    });
+
+    if (!response.ok) throw new Error('Ошибка создания задачи');
+    
+    alert('Задача успешно создана');
+    closeCreateModal();
+    fetchTasks();
+  } catch (error) {
+    console.error('Ошибка создания задачи:', error);
+    alert('Не удалось создать задачу');
+  }
+};
+
+/* Неизмененные функции из вашего исходного кода */
+
+const displayedTasks = computed(() => {
+  return activeTab.value === 'assigned' ? tasks.value.assigned : tasks.value.created;
 });
 
 const sortBy = (field) => {
   if (sortField.value === field) {
-    // Если уже сортируем по этому полю, меняем направление
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
-    // Если новое поле, сортируем по возрастанию
     sortField.value = field;
     sortDirection.value = 'asc';
   }
   
-  // Применяем сортировку
-  const taskList = activeTab.value === 'assigned' ? tasksData.value.assigned : tasksData.value.created;
+  const taskList = activeTab.value === 'assigned' ? tasks.value.assigned : tasks.value.created;
   taskList.sort((a, b) => {
-    let valueA = a[field];
-    let valueB = b[field];
+    const valueA = a[field];
+    const valueB = b[field];
     
-    // Для дат преобразуем в timestamp
-    if (field.includes('Date') && valueA && valueB) {
-      valueA = new Date(valueA.split('.').reverse().join('-')).getTime();
-      valueB = new Date(valueB.split('.').reverse().join('-')).getTime();
-    }
-    
-    // Сравниваем значения
     if (valueA < valueB) return sortDirection.value === 'asc' ? -1 : 1;
     if (valueA > valueB) return sortDirection.value === 'asc' ? 1 : -1;
     return 0;
   });
 };
 
-const displayedTasks = computed(() => {
-  return activeTab.value === 'assigned' ? tasksData.value.assigned : tasksData.value.created;
-});
-
-const openTaskModal = (task) => {
-  selectedTask.value = { ...task };
+const openTaskModal = async (task) => {
+  isLoading.value = true;
+  try {
+    const fullTask = await fetchTaskById(task.id);
+    if (fullTask) {
+      selectedTask.value = {
+        ...fullTask,
+        author: users.value.find(u => u.id === fullTask.initiator)?.name || 'Неизвестно',
+        executor: users.value.find(u => u.id === fullTask.executor)?.name || 'Неизвестно',
+        status: getStatusText(fullTask.status),
+        createdDate: formatDate(fullTask.create_date),
+        assignedDate: formatDate(fullTask.execute_date),
+        comments: []
+      };
+    }
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const closeModal = () => {
@@ -370,20 +403,18 @@ const addComment = () => {
     date: new Date().toLocaleString()
   };
   
-  // Находим задачу в данных и добавляем комментарий
-  const taskList = activeTab.value === 'assigned' ? tasksData.value.assigned : tasksData.value.created;
+  const taskList = activeTab.value === 'assigned' ? tasks.value.assigned : tasks.value.created;
   const taskIndex = taskList.findIndex(t => t.id === selectedTask.value.id);
   
   if (taskIndex !== -1) {
     taskList[taskIndex].comments.push(comment);
-    // selectedTask.value.comments.push(comment);
     newComment.value = '';
   }
 };
 
 const deleteTask = () => {
   if (confirm('Вы уверены, что хотите удалить эту задачу?')) {
-    const taskList = activeTab.value === 'assigned' ? tasksData.value.assigned : tasksData.value.created;
+    const taskList = activeTab.value === 'assigned' ? tasks.value.assigned : tasks.value.created;
     const taskIndex = taskList.findIndex(t => t.id === selectedTask.value.id);
     
     if (taskIndex !== -1) {
@@ -393,16 +424,16 @@ const deleteTask = () => {
   }
 };
 
-
 const createTask = () => {
-  // Сбрасываем форму
   newTask.value = {
-    type: '',
-    executor: ''
+    task_id: 1,
+    executor: '',
+    description: '',
+    status: 1,
+    create_date: new Date().toISOString().split('T')[0],
+    execute_date: ''
   };
   newTaskComment.value = '';
-  
-  // Открываем модальное окно
   isCreateModalOpen.value = true;
 };
 
@@ -410,53 +441,36 @@ const closeCreateModal = () => {
   isCreateModalOpen.value = false;
 };
 
-const saveNewTask = () => {
-  if (!newTask.value.type || !newTask.value.executor) {
-    alert('Пожалуйста, заполните все обязательные поля');
-    return;
-  }
-  
-  // Создаем новую задачу
-  const taskDescription = taskTypes.value.find(t => t.value === newTask.value.type)?.label || 'Новая задача';
-  
-  const newTaskObj = {
-    id: Date.now(),
-    author: 'Я (текущий пользователь)',
-    executor: newTask.value.executor,
-    description: taskDescription,
-    status: 'Новая',
-    createdDate: new Date().toLocaleDateString(),
-    assignedDate: '',
-    comments: []
-  };
-  
-  // Добавляем комментарий, если он есть
-  if (newTaskComment.value.trim()) {
-    newTaskObj.comments.push({
-      id: Date.now(),
-      author: 'Я (текущий пользователь)',
-      text: newTaskComment.value,
-      date: new Date().toLocaleString()
-    });
-  }
-  
-  // Добавляем задачу в список
-  tasksData.value.created.unshift(newTaskObj);
-  
-  // Закрываем модальное окно
-  closeCreateModal();
-};
-
 const completeTask = () => {
-  const taskList = tasksData.value.assigned;
+  const taskList = tasks.value.assigned;
   const taskIndex = taskList.findIndex(t => t.id === selectedTask.value.id);
   
   if (taskIndex !== -1) {
-    taskList[taskIndex].status = 'Выполнено';
-    taskList[taskIndex].assignedDate = new Date().toLocaleDateString();
+    taskList[taskIndex].status = 3; // 3 = Выполнено
+    taskList[taskIndex].execute_date = new Date().toISOString().split('T')[0];
     closeModal();
   }
 };
+
+/* Вспомогательные функции */
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('ru-RU');
+};
+
+const getStatusText = (statusCode) => {
+  const statuses = {
+    1: 'В работе',
+    2: 'Выполнено',
+  };
+  return statuses[statusCode] || 'Неизвестно';
+};
+
+// Инициализация
+onMounted(() => {
+  fetchTasks();
+});
 </script>
 
 <style scoped>

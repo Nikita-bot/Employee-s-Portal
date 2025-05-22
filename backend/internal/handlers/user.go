@@ -28,7 +28,7 @@ func NewUserHandler(s service.UserService, l *zap.Logger, e *echo.Echo) UserHand
 }
 
 func (uh userHandler) Handle() {
-	uh.e.GET("/api/v1/auth", uh.getAllUser)
+	uh.e.POST("/api/v1/auth", uh.getAllUser)
 	uh.e.GET("/api/v1/user/:id", uh.GetUserByID)
 }
 
@@ -37,11 +37,11 @@ func (uh userHandler) getAllUser(c echo.Context) error {
 
 	var request = make(map[string]interface{})
 
-	// login := c.FormValue("login")
-	// password := c.FormValue("password")
+	login := c.FormValue("login")
+	password := c.FormValue("password")
 
-	login := c.QueryParam("login")
-	password := c.QueryParam("password")
+	// login := c.QueryParam("login")
+	// password := c.QueryParam("password")
 
 	user, err := uh.s.Login(login, password)
 	if err != nil {
