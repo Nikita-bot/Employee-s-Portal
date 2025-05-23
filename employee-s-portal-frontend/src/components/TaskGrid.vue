@@ -467,7 +467,7 @@ onMounted(() => {
   width: 90%;
   margin-top: 50px;
   display: grid;
-  grid-template-columns: 10% 15% 30% 15% 15% 15%;
+  grid-template-columns: 7% 15% 30% 15% 15% 18%;
   gap: 1px; 
   border-radius: 15px;
   overflow: hidden; 
