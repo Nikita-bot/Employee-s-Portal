@@ -19,7 +19,7 @@ func InitServer() (*echo.Echo, error) {
 			echo.HeaderXForwardedFor,
 			echo.HeaderXRequestedWith,
 		},
-		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods: []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 	}))
 
 	return e, nil

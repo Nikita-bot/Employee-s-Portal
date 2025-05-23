@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"portal/internal/entity"
 
 	"github.com/jmoiron/sqlx"
@@ -13,6 +14,8 @@ type (
 		TaskByUser(userId int) ([]entity.UserTask, error)
 		CreateTask(uc entity.UserTaskCreate) error
 		GetTaskByID(id int) (entity.UserTask, error)
+		DeleteTask(id int) error
+		UpdateTask(id int, date string) error
 	}
 	userTaskRepo struct {
 		db *sqlx.DB
@@ -33,7 +36,7 @@ func (u userTaskRepo) TaskForUser(userId int) ([]entity.UserTask, error) {
 	var ut []entity.UserTask
 
 	query := `
-		SELECT * FROM user_task WHERE initiator=$1
+		SELECT * FROM user_task WHERE executor=$1 AND status!=3 AND status!=1
 	`
 
 	err := u.db.Select(&ut, query, userId)
@@ -51,7 +54,7 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 	var ut []entity.UserTask
 
 	query := `
-		SELECT * FROM user_task WHERE executor=$1
+		SELECT * FROM user_task WHERE initiator=$1 AND status!=3
 	`
 
 	err := u.db.Select(&ut, query, userId)
@@ -80,7 +83,7 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
 	u.l.Debug("IN USER TASK REPO :: GET TASK BY ID")
 
 	query := `
-		SELECT * FROM user_task WHERE id=$1
+		SELECT * FROM user_task WHERE id=$1 AND status!=3
 	`
 
 	var ut entity.UserTask
@@ -92,4 +95,36 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
 	}
 
 	return ut, nil
+}
+
+func (u userTaskRepo) DeleteTask(id int) error {
+	u.l.Debug("IN USER TASK REPO :: DELETE TASK")
+
+	query := `
+		UPDATE user_task SET status=3 WHERE id=$1
+	`
+
+	_, err := u.db.Exec(query, id)
+	if err != nil {
+		u.l.Error(err.Error())
+		return errors.New("Can't delete Task")
+	}
+
+	return nil
+}
+
+func (u userTaskRepo) UpdateTask(id int, date string) error {
+	u.l.Debug("IN USER TASK REPO :: EXEC TASK")
+
+	query := `
+		UPDATE user_task SET status=1, execute_date = $2 WHERE id=$1
+	`
+
+	_, err := u.db.Exec(query, id, date)
+	if err != nil {
+		u.l.Error(err.Error())
+		return errors.New("CAN`T EXEC TASK")
+	}
+
+	return nil
 }

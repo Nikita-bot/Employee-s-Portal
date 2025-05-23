@@ -4,6 +4,7 @@ import (
 	"portal/internal/entity"
 	"portal/internal/service"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
@@ -32,6 +33,8 @@ func (uh userTaskHandler) Handle() {
 	uh.e.GET("/api/v1/tasks/user/:userId", uh.getAllUserTask)
 	uh.e.POST("/api/v1/tasks", uh.postUserTask)
 	uh.e.GET("/api/v1/tasks/:id", uh.getUserTaskByID)
+	uh.e.PATCH("/api/v1/tasks/:id", uh.patchUserTask)
+	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask)
 }
 
 func (uh userTaskHandler) getAllUserTask(c echo.Context) error {
@@ -94,4 +97,40 @@ func (uh userTaskHandler) getUserTaskByID(c echo.Context) error {
 	response["task"] = ut
 
 	return c.JSON(200, response)
+}
+
+func (uh *userTaskHandler) deleteUserTask(c echo.Context) error {
+	uh.l.Info("IH USER TASK HANDLER :: DELETE TASK")
+
+	taskID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.String(400, "Task ID is required")
+	}
+
+	err = uh.s.DeleteTask(taskID)
+	if err != nil {
+		return c.String(500, err.Error())
+	}
+
+	return c.String(200, "Task deleted successfully")
+}
+
+func (uh *userTaskHandler) patchUserTask(c echo.Context) error {
+	uh.l.Info("IH USER TASK HANDLER :: UPDATE TASK")
+
+	// Получаем ID задачи из URL
+	taskID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.String(400, "Task ID is required")
+	}
+
+	now := time.Now()
+	execDate := now.Format("2006-01-02")
+
+	err = uh.s.ExecTask(taskID, execDate)
+	if err != nil {
+		return c.String(500, err.Error())
+	}
+
+	return c.String(200, "Task updated successfully")
 }

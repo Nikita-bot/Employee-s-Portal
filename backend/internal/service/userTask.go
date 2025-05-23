@@ -13,6 +13,8 @@ type (
 		TaskByUser(userId int) ([]entity.UserTask, error)
 		CreateTask(uc entity.UserTaskCreate) error
 		GetTaskByID(id int) (entity.UserTask, error)
+		ExecTask(id int, date string) error
+		DeleteTask(id int) error
 	}
 	userTaskService struct {
 		r repository.UserTaskRepository
@@ -70,4 +72,26 @@ func (u userTaskService) GetTaskByID(id int) (entity.UserTask, error) {
 
 	return ut, nil
 
+}
+
+func (u userTaskService) ExecTask(id int, date string) error {
+	u.l.Debug("IN USER TASK SERVICE :: EXEC TASK")
+
+	err := u.r.UpdateTask(id, date)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u userTaskService) DeleteTask(id int) error {
+	u.l.Debug("IN USER TASK SERVICE :: EXEC TASK")
+
+	err := u.r.DeleteTask(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
