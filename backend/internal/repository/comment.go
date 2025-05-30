@@ -31,8 +31,24 @@ func (cr commentRepo) GetComments(taskId int) ([]entity.Comment, error) {
 	var c []entity.Comment
 
 	query := `
-		SELECT * FROM comments WHERE user_task_id=$1
-	`
+        SELECT 
+            c.id,
+            c.user_task_id,
+            c.comment,
+            c.creation_date,
+            u.id AS "author.id",
+            u.name AS "author.name",
+            u.surname AS "author.surname",
+            u.patronymic AS "author.patronymic"
+        FROM 
+            comments c
+        JOIN 
+            users u ON c.author_id = u.id
+        WHERE 
+            c.user_task_id = $1
+        ORDER BY 
+            c.creation_date DESC
+    `
 
 	err := cr.db.Select(&c, query, taskId)
 	if err != nil {
@@ -47,7 +63,7 @@ func (cr commentRepo) CreateComment(cc entity.CommentCreate) error {
 	cr.l.Info("IN COMMET REPO :: CREATE NEW COMMET")
 
 	query := `
-		INCERT INTO comments (user_task_id, author_id, comment, creation_date)
+		INSERT INTO comments (user_task_id, author_id, comment, creation_date)
 		VALUES (:user_task_id, :author_id, :comment, :creation_date)
 	`
 

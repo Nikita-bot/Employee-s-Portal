@@ -3,6 +3,8 @@ package repository
 import (
 	"errors"
 	"portal/internal/entity"
+	"strconv"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -36,8 +38,35 @@ func (u userTaskRepo) TaskForUser(userId int) ([]entity.UserTask, error) {
 	var ut []entity.UserTask
 
 	query := `
-		SELECT * FROM user_task WHERE executor=$1 AND status!=3 AND status!=1
-	`
+        SELECT 
+            ut.id,
+            ut.task_id,
+            ut.description,
+            ut.status,
+            ut.create_date,
+            ut.execute_date,
+            -- Данные исполнителя
+            exec.id AS "executor.id",
+            exec.name AS "executor.name",
+            exec.surname AS "executor.surname",
+            exec.patronymic AS "executor.patronymic",
+            -- Данные инициатора
+            init.id AS "initiator.id",
+            init.name AS "initiator.name",
+            init.surname AS "initiator.surname",
+            init.patronymic AS "initiator.patronymic"
+        FROM 
+            user_task ut
+        JOIN 
+            users exec ON ut.executor = exec.id
+        JOIN 
+            users init ON ut.initiator = init.id
+        WHERE 
+            ut.executor = $1 
+            AND ut.status NOT IN (1, 3)
+        ORDER BY 
+            ut.create_date DESC
+    `
 
 	err := u.db.Select(&ut, query, userId)
 	if err != nil {
@@ -54,8 +83,35 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 	var ut []entity.UserTask
 
 	query := `
-		SELECT * FROM user_task WHERE initiator=$1 AND status!=3
-	`
+        SELECT 
+            ut.id,
+            ut.task_id,
+            ut.description,
+            ut.status,
+            ut.create_date,
+            ut.execute_date,
+            -- Данные исполнителя
+            exec.id AS "executor.id",
+            exec.name AS "executor.name",
+            exec.surname AS "executor.surname",
+            exec.patronymic AS "executor.patronymic",
+            -- Данные инициатора
+            init.id AS "initiator.id",
+            init.name AS "initiator.name",
+            init.surname AS "initiator.surname",
+            init.patronymic AS "initiator.patronymic"
+        FROM 
+            user_task ut
+        JOIN 
+            users exec ON ut.executor = exec.id
+        JOIN 
+            users init ON ut.initiator = init.id
+        WHERE 
+            ut.initiator = $1 
+            AND ut.status != 3
+        ORDER BY 
+            ut.create_date DESC
+    `
 
 	err := u.db.Select(&ut, query, userId)
 	if err != nil {
@@ -69,13 +125,33 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 	u.l.Debug("IN USER TASK REPO :: CREATE TASK")
 
-	_, err := u.db.NamedExec(`INSERT INTO user_task (task_id,executor,initiator, description,status,create_date,execute_date)
-	VALUES (:task_id, :executor, :initiator, :description, :status, :create_date, :execute_date)`, uc)
+	var tj entity.TaskJournal
+	var id int
+
+	row := u.db.QueryRow(`
+    INSERT INTO user_task 
+    (task_id, executor, initiator, description, status, create_date, execute_date)
+    VALUES ($1, $2, $3, $4, $5, $6, $7) 
+    RETURNING id`,
+		uc.Task, uc.Executor, uc.Initiator, uc.Description,
+		uc.Status, uc.CreateDate, uc.ExecuteDate)
+
+	err := row.Scan(&id)
 	if err != nil {
 		u.l.Error(err.Error())
 		return err
 	}
 
+	tj = entity.TaskJournal{
+		UserTaskID:    int(id),
+		Action:        "Задача" + strconv.Itoa(int(id)) + "создана",
+		Creation_date: time.Now().String(),
+	}
+
+	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
+	if err != nil {
+		u.l.Error(err.Error())
+	}
 	return nil
 }
 
@@ -83,8 +159,33 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
 	u.l.Debug("IN USER TASK REPO :: GET TASK BY ID")
 
 	query := `
-		SELECT * FROM user_task WHERE id=$1 AND status!=3
-	`
+        SELECT 
+            ut.id,
+            ut.task_id,
+            ut.description,
+            ut.status,
+            ut.create_date,
+            ut.execute_date,
+            -- Данные исполнителя
+            exec.id AS "executor.id",
+            exec.name AS "executor.name",
+            exec.surname AS "executor.surname",
+            exec.patronymic AS "executor.patronymic",
+            -- Данные инициатора
+            init.id AS "initiator.id",
+            init.name AS "initiator.name",
+            init.surname AS "initiator.surname",
+            init.patronymic AS "initiator.patronymic"
+        FROM 
+            user_task ut
+        JOIN 
+            users exec ON ut.executor = exec.id
+        JOIN 
+            users init ON ut.initiator = init.id
+        WHERE 
+            ut.id = $1 
+            AND ut.status != 3
+    `
 
 	var ut entity.UserTask
 

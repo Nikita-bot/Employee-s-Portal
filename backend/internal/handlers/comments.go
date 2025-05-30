@@ -29,7 +29,7 @@ func NewCommentHandler(s service.CommentService, l *zap.Logger, e *echo.Echo) Co
 }
 
 func (ch commentHandler) Handle() {
-	ch.e.POST("/comments", ch.createComment)
+	ch.e.POST("api/v1/comments", ch.createComment)
 	ch.e.GET("/api/v1/comments/:taskId", ch.getAllComments)
 
 }
@@ -61,6 +61,7 @@ func (ch commentHandler) createComment(c echo.Context) error {
 
 	err := c.Bind(&comment)
 	if err != nil {
+		ch.l.Error(err.Error())
 		return c.String(401, "BAD REQUEST")
 	}
 

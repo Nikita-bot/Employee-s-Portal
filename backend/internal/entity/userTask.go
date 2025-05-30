@@ -2,14 +2,14 @@ package entity
 
 type (
 	UserTask struct {
-		ID          int    `json:"id" db:"id"`
-		Task        string `json:"task_id" db:"task_id"`
-		Executor    int    `json:"executor" db:"executor"`
-		Initiator   int    `json:"initiator" db:"initiator"`
-		Description string `json:"description" db:"description"`
-		Status      int    `json:"status" db:"status"`
-		CreateDate  string `json:"create_date" db:"create_date"`
-		ExecuteDate string `json:"execute_date" db:"execute_date"`
+		ID          int          `json:"id" db:"id"`
+		Task        string       `json:"task_id" db:"task_id"`
+		Executor    UserMainData `json:"executor" db:"executor"`
+		Initiator   UserMainData `json:"initiator" db:"initiator"`
+		Description string       `json:"description" db:"description"`
+		Status      int          `json:"status" db:"status"`
+		CreateDate  string       `json:"create_date" db:"create_date"`
+		ExecuteDate string       `json:"execute_date" db:"execute_date"`
 	}
 
 	UserTaskCreate struct {

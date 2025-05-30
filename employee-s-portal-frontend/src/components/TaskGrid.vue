@@ -98,7 +98,7 @@
           class="grid-item clickable"
           @click="openTaskModal(task)"
         >
-          {{ activeTab === 'assigned' ? task.initiator : task.executor }}
+          {{ activeTab === 'assigned' ? formatFullName(task.initiator.surname, task.initiator.name, task.initiator.patronymic) : formatFullName(task.executor.surname, task.executor.name, task.executor.patronymic) }}
         </div>
         <div 
           class="grid-item clickable"
@@ -179,7 +179,6 @@ const displayedTasks = computed(() => {
     ? tasks.value.assigned 
     : tasks.value.created;
   
-  // Применяем сортировку, если задано поле сортировки
   if (sortField.value) {
     return [...taskList].sort((a, b) => {
       const valueA = a[sortField.value];
@@ -203,7 +202,6 @@ const sortBy = (field) => {
   }
 };
 
-// Получение задач
 const fetchTasks = async () => {
   isLoading.value = true;
   try {
@@ -235,7 +233,6 @@ const fetchTasks = async () => {
   }
 };
 
-// Получение типов задач
 const fetchTaskTypes = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/v1/taskList');
@@ -247,7 +244,6 @@ const fetchTaskTypes = async () => {
   }
 };
 
-// Получение пользователей отдела
 const fetchDepartmentUsers = async (departmentId) => {
   try {
     const response = await fetch(`http://localhost:8080/api/v1/depatments/user/${departmentId}`);
@@ -259,7 +255,6 @@ const fetchDepartmentUsers = async (departmentId) => {
   }
 };
 
-// Обработчики событий
 const openTaskModal = async (task) => {
   isLoading.value = true;
   try {
@@ -272,7 +267,7 @@ const openTaskModal = async (task) => {
       createdDate: fullTask.create_date,
       assignedDate: fullTask.execute_date ? fullTask.execute_date : '-',
       status: getStatusText(fullTask.status),
-      comments: [] // Здесь можно добавить загрузку комментариев
+      comments: await fetchComments(fullTask.id) // Здесь можно добавить загрузку комментариев
     };
     
     isTaskModalOpen.value = true;
@@ -330,24 +325,64 @@ const handleCompleteTask = async () => {
   }
 };
 
+const fetchComments = async (id) =>{
+  try {
+    const response = await fetch(`http://localhost:8080/api/v1/comments/${id}`);
+    if (!response.ok) throw new Error('Ошибка загрузки комментариев задач');
+    const data = await response.json();
+    return data.comments || [];
+  } catch (error) {
+    console.error('Ошибка загрузки типов задач:', error);
+    alert('Не удалось загрузить типы задач');
+    return [];
+  }
+}
+
 const handleAddComment = async (commentText) => {
   if (!selectedTask.value || !commentText.trim()) return;
   
   try {
-    // Здесь должна быть реализация API для добавления комментария
-    // Временная реализация - добавляем комментарий локально
+    const newCommentPost = {
+      author: userStore.userData.id,
+      text: commentText,
+      date: new Date().toLocaleString()
+    };
+
+    const newComment = {
+      author: {
+        id: userStore.userData.id,
+        name: userStore.userData.name,
+        surname: userStore.userData.surname,
+        patronymic: userStore.userData.patronymic
+      },
+      comment: commentText,
+      creation_date: new Date().toLocaleString()
+    }
+
+    
+    const response = await fetch('http://localhost:8080/api/v1/comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_task_id: selectedTask.value.id, // предполагается, что id задачи хранится в selectedTask.value.id
+        author_id: newCommentPost.author,
+        comment: newCommentPost.text,
+        creation_date: newCommentPost.date
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при отправке комментария на сервер');
+    }
+
     if (!selectedTask.value.comments) {
       selectedTask.value.comments = [];
     }
+
+    selectedTask.value.comments.push(newComment);
     
-    selectedTask.value.comments.push({
-      id: Date.now(),
-      author: `${userStore.userData.surname} ${userStore.userData.name}`,
-      text: commentText,
-      date: new Date().toLocaleString()
-    });
-    
-    // Здесь должен быть вызов API для сохранения комментария
   } catch (error) {
     console.error('Ошибка добавления комментария:', error);
     alert('Не удалось добавить комментарий');
@@ -369,7 +404,7 @@ const handleTaskTypeChange = (taskId) => {
   }
 };
 
-const handleCreateTask = async ({ task, comment }) => {
+const handleCreateTask = async ({ task }) => {
   try {
     const taskToCreate = {
       ...task,
@@ -387,12 +422,6 @@ const handleCreateTask = async ({ task, comment }) => {
     });
     
     if (!response.ok) throw new Error('Ошибка создания задачи');
-    
-    // Если есть комментарий, добавляем его к задаче
-    if (comment) {
-      const createdTask = await response.json();
-      // Здесь должен быть вызов API для добавления комментария
-    }
     
     await fetchTasks();
     closeCreateModal();
@@ -413,11 +442,24 @@ const getStatusText = (statusCode) => {
   return statuses[statusCode] || 'Неизвестно';
 };
 
-// Инициализация
+const formatFullName = (surname, name, patronymic) => {
+  if (!surname) return '';
+  
+  let formatted = surname;
+  if (name) {
+    formatted += ` ${name.charAt(0)}.`;
+    if (patronymic) {
+      formatted += `${patronymic.charAt(0)}.`;
+    }
+  }
+  return formatted;
+};
+
 onMounted(() => {
   fetchTasks();
   fetchTaskTypes();
 });
+
 </script>
 
 <style scoped>

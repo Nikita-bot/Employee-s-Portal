@@ -52,16 +52,7 @@
               placeholder="Введите описание задачи..."
             ></textarea>
           </div>
-          
-          <div class="form-group">
-            <label>Комментарий:</label>
-            <textarea 
-              v-model="newTaskComment"
-              class="form-input"
-              rows="3"
-              placeholder="Введите дополнительный комментарий..."
-            ></textarea>
-          </div>
+
         </div>
       </div>
 
@@ -102,7 +93,6 @@ const newTask = ref({
   execute_date: ''
 });
 
-const newTaskComment = ref('');
 
 const saveTask = () => {
   if (!newTask.value.executor || !newTask.value.description) {
@@ -112,7 +102,6 @@ const saveTask = () => {
   
   emit('save', {
     task: newTask.value,
-    comment: newTaskComment.value
   });
 };
 </script>

@@ -50,11 +50,12 @@ const routes = [
     component: KnowledgePage
   },
   {
-    path: '/user', // Ловит любой несоответствующий маршрут
-    component: UserPage 
+    path: '/user/:id', 
+    component: UserPage,
+    props: true
   },
   {
-    path: '/potals', // Ловит любой несоответствующий маршрут
+    path: '/potals', 
     component: UserPage 
   },
   {

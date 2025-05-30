@@ -64,6 +64,8 @@ func (u userRepo) GetUserByLogin(login string) (entity.User, error) {
 
 	department := u.GetDepartmentByUserID(user.ID)
 	user.Department = department
+	boss := u.GetUserBoss(user.ID)
+	user.Boss = boss
 
 	return user, nil
 }
@@ -104,6 +106,25 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 
 	department := u.GetDepartmentByUserID(user.ID)
 	user.Department = department
-
+	boss := u.GetUserBoss(user.ID)
+	user.Boss = boss
 	return user, nil
+}
+
+func (r userRepo) GetUserBoss(userID int) entity.UserMainData {
+
+	var boss entity.UserMainData
+
+	query := `
+		SELECT u.id, u.name, u.surname, u.patronymic 
+		FROM users u 
+		JOIN users rab ON u.id = rab.boss 
+		WHERE rab.id = $1
+	`
+	err := r.db.Get(&boss, query, userID)
+	if err != nil {
+		return entity.UserMainData{}
+	}
+
+	return boss
 }

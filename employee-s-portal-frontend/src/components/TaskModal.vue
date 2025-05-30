@@ -7,8 +7,8 @@
       
       <div class="modal-content">
         <div class="task-info">
-          <p><strong>Автор:</strong> {{ task.initiator }}</p>
-          <p><strong>Исполнитель:</strong> {{ task.executor }}</p>
+          <p><strong>Автор:</strong> {{ formatFullName(task.initiator.surname, task.initiator.name, task.initiator.patronymic) }}</p>
+          <p><strong>Исполнитель:</strong> {{ formatFullName(task.executor.surname, task.executor.name, task.executor.patronymic) }}</p>
           <p><strong>Описание:</strong> {{ task.description }}</p>
           <p><strong>Статус:</strong> {{ task.status }}</p>
           <p><strong>Дата создания:</strong> {{task.create_date }}</p>
@@ -18,8 +18,8 @@
         <div class="comments-section">
           <h4>Комментарии:</h4>
           <div v-for="comment in task.comments" :key="comment.id" class="comment">
-            <p><strong>{{ comment.author }}:</strong> {{ comment.text }}</p>
-            <small>{{ comment.date }}</small>
+            <p><strong>{{formatFullName(comment.author.surname, comment.author.name,comment.author.patronymic)  }}:</strong> {{ comment.comment }}</p>
+            <small>{{ comment.creation_date }}</small>
           </div>
           
           <div class="new-comment">
@@ -75,6 +75,19 @@ const props = defineProps({
 const emit = defineEmits(['close', 'delete', 'complete', 'add-comment']);
 
 const newComment = ref('');
+
+const formatFullName = (surname, name, patronymic) => {
+  if (!surname) return '';
+  
+  let formatted = surname;
+  if (name) {
+    formatted += ` ${name.charAt(0)}.`;
+    if (patronymic) {
+      formatted += `${patronymic.charAt(0)}.`;
+    }
+  }
+  return formatted;
+};
 
 const addComment = () => {
   if (!newComment.value.trim()) return;

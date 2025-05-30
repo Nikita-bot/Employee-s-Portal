@@ -13,10 +13,10 @@
         </div>
         <!-- Динамические данные -->
         <div class="infoData">
-          <p class="elData">{{ userData.fullName }}</p>
-          <p class="elData">{{ userData.position }}</p>
-          <p class="elData">{{ userData.department }}</p>
-          <p class="elData">{{ userData.employmentDate }}</p>
+          <p class="elData">{{ userDataLocal.fullName || 'Не указан' }}</p>
+          <p class="elData">{{ userDataLocal.position || 'Не указан' }}</p>
+          <p class="elData">{{ userDataLocal.department || 'Не указан' }}</p>
+          <p class="elData">{{ userDataLocal.employmentDate || 'Не указан' }}</p>
         </div>
       </div>
     </div>
@@ -30,8 +30,8 @@
         </div>
         <div class="contactsData">
           <!-- Динамические данные -->
-          <div class="elData">{{ userData.contacts.email }}</div>
-          <div class="elData">{{ userData.contacts.phone }}</div>
+          <div class="elData">{{ userDataLocal.contacts?.email || 'Не указан' }}</div>
+          <div class="elData">{{ userDataLocal.contacts?.phone || 'Не указан' }}</div>
         </div>
       </div>
       <div class="line"></div>
@@ -43,49 +43,144 @@
         </div>
         <div class="contactsData">
           <!-- Динамические данные -->
-          <div class="elData" ><a v-if="userData.contacts.telegram"  :href="`https://t.me/${userData.contacts.telegram}`" target="_blank">{{ userData.contacts.telegram }}</a><span v-else>Не указан</span></div>
-          <div class="elData">{{ userData.contacts.manager }}</div>
+          <div class="elData">
+            <a v-if="userDataLocal.contacts?.telegram" :href="`https://t.me/${userDataLocal.contacts.telegram}`" target="_blank">
+              {{ userDataLocal.contacts.telegram }}
+            </a>
+            <span v-else>Не указан</span>
+          </div>
+            <div class="elData">
+              <span v-if="!userDataLocal.contacts?.boss">Не указан</span>
+              <span
+                v-else
+                class="boss-link"
+                @click.prevent="fetchBossData(userDataLocal.contacts.boss.id)"
+              >
+                {{ formatBossName(userDataLocal.contacts.boss) }}
+              </span>
+          </div>
         </div>
       </div>
+    </div>
+
+    <div class="button-container">
+      <button 
+        v-if="isShowingBoss" 
+        @click="returnToUser"
+        class="return-button"
+      >
+        ← Вернуться к пользователю
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { onMounted, ref  } from 'vue';
 import { useUserStore } from '@/stores/user';
 import logo from '@/assets/logo.png';
 
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+})
+
 const userStore = useUserStore();
+const isShowingBoss = ref(false);
 
 // Вычисляемые свойства для форматирования данных
-const userData = computed(() => {
-  if (!userStore.userData) return {
-    fullName: '',
-    position: '',
-    department: '',
-    employmentDate: '',
-    contacts: {
-      email: '',
-      phone: '',
-      telegram: '',
-      manager: ''
-    }
-  };
-
-  return {
-    fullName: `${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`,
-    position: userStore.userData.position,
-    department: userStore.userData.department?.name || '',
-    employmentDate: formatDate(userStore.userData.employment_date),
-    contacts: {
-      email: userStore.userData.email,
-      phone: userStore.userData.phone,
-      telegram: userStore.userData.tg_link,
-      manager: 'Петров П.П.' // Здесь можно добавить логику для получения руководителя
-    }
-  };
+const userDataLocal = ref({
+  fullName: '',
+  position: '',
+  department: '',
+  employmentDate: '',
+  contacts: {
+    email: '',
+    phone: '',
+    telegram: '',
+    boss: null
+  }
 });
+
+const updateUserData = (fullName,position, department,employmentDate,email,phone,telegram,boss) => {
+  userDataLocal.value = {
+    fullName: fullName,//`${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`,
+    position: position,//userStore.userData.position,
+    department: department || '',//userStore.userData.department?.name || '',
+    employmentDate: formatDate(employmentDate),//formatDate(userStore.userData.employment_date),
+    contacts: {
+      email: email,//userStore.userData.email,
+      phone: phone,// userStore.userData.phone,
+      telegram:telegram,// userStore.userData.tg_link,
+      boss: boss//userStore.userData.boss
+    }
+  };
+};
+
+const returnToUser = () => {
+    isShowingBoss.value = false;
+    updateUserData(`${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`,
+      userStore.userData.position,
+      userStore.userData.department.name,
+      userStore.userData.employment_date,
+      userStore.userData.email,
+      userStore.userData.phone,
+      userStore.userData.telegram,
+      userStore.userData.boss
+    )
+};
+
+const fetchBossData = async (bossId) => {
+  try {
+
+    const response = await fetch(`http://localhost:8080/api/v1/user/${bossId}`);
+
+    if (!response.ok) throw new Error('Ошибка загрузки данных о пользователе');
+
+    const data = await response.json();
+    if (data.user) {
+  
+      updateUserData(`${data.user.surname} ${data.user.name} ${data.user.patronymic}`, data.user.position,data.user.department?.name,data.user.employment_date,data.user.email,data.user.phone
+        ,data.user.tg_link, data.user.boss
+      )
+
+      isShowingBoss.value = true;
+
+    } else {
+      throw new Error('Ошибка загрузки данных о пользователе');
+    }
+
+  } catch (error) {
+    console.error('Ошибка загрузки данных о пользователе:', error);
+    alert('Не удалось загрузить данные о пользователе');
+  }
+}
+
+const fetchUserData = async () =>{
+  try {
+
+    const response = await fetch(`http://localhost:8080/api/v1/user/${userStore.userData.id}`);
+
+    if (!response.ok) throw new Error('Ошибка загрузки данных о пользователе');
+
+    const data = await response.json();
+    if (data.user) {
+      userStore.setUserData(JSON.parse(JSON.stringify(data.user)));
+
+      updateUserData(`${data.user.surname} ${data.user.name} ${data.user.patronymic}`, data.user.position,data.user.department?.name,data.user.employment_date,data.user.email,data.user.phone
+        ,data.user.tg_link, data.user.boss
+      )
+    } else {
+      throw new Error('Ошибка загрузки данных о пользователе');
+    }
+
+  } catch (error) {
+    console.error('Ошибка загрузки данных о пользователе:', error);
+    alert('Не удалось загрузить данные о пользователе');
+  }
+}
 
 // Функция для форматирования даты
 const formatDate = (dateString) => {
@@ -93,6 +188,29 @@ const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('ru-RU');
 };
+
+const formatFullName = (surname, name, patronymic) => {
+  if (!surname) return '';
+  
+  let formatted = surname;
+  if (name) {
+    formatted += ` ${name.charAt(0)}.`;
+    if (patronymic) {
+      formatted += `${patronymic.charAt(0)}.`;
+    }
+  }
+  return formatted;
+};
+
+const formatBossName = (boss) => {
+  if (!boss || !boss.surname) return '';
+  return formatFullName(boss.surname, boss.name, boss.patronymic);
+};
+
+
+onMounted(() => {
+  fetchUserData()
+})
 
 </script>
 
@@ -173,5 +291,28 @@ const formatDate = (dateString) => {
             height: 90px;
             background-color: #5662DE;
             margin-top: 30px;
+        }
+
+        .button-container {
+          display: flex;
+          justify-content: flex-end; /* Выравнивание по правому краю */
+          margin-right: 20px; /* Отступ справа */
+          margin-top: 20px; /* Отступ сверху */
+        }
+
+        .return-button {
+          margin-top: 40px;
+          padding: 8px 16px;
+          background-color: #5662DE;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+        }
+
+        .return-button:hover {
+          background-color: #454fa7;
         }
 </style>
