@@ -19,6 +19,10 @@ type (
 		Description string `json:"description" form:"description" db:"description"`
 		Status      int    `json:"status" form:"status" db:"status"`
 		CreateDate  string `json:"create_date" form:"create_date" db:"create_date"`
-		ExecuteDate string `json:"execute_date" form:"execute_date" db:"execute_date"`
+	}
+
+	UserCountTask struct {
+		UserID int `db:"user_id"`
+		Count  int `db:"task_count"`
 	}
 )

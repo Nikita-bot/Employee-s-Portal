@@ -35,6 +35,32 @@ func (uh userTaskHandler) Handle() {
 	uh.e.GET("/api/v1/tasks/:id", uh.getUserTaskByID)
 	uh.e.PATCH("/api/v1/tasks/:id", uh.patchUserTask)
 	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask)
+	uh.e.PATCH("/api/v1/tasks/executor/:id", uh.patchExecutorToTask)
+}
+
+func (uh userTaskHandler) patchExecutorToTask(c echo.Context) error {
+	uh.l.Info("IH USER TASK HANDLER :: UPDATE TASK")
+
+	type ChangeExecutorRequest struct {
+		ExecutorID int `json:"executor_id" validate:"required"`
+	}
+
+	taskID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.String(400, "Task ID is required")
+	}
+
+	var req ChangeExecutorRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, map[string]string{"error": "Invalid request body"})
+	}
+
+	err = uh.s.ChangeExecutor(taskID, req.ExecutorID)
+	if err != nil {
+		return c.String(500, "Can`t change executor")
+	}
+
+	return c.String(200, "Task updated successfully")
 }
 
 func (uh userTaskHandler) getAllUserTask(c echo.Context) error {

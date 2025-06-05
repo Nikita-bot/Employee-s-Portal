@@ -12,7 +12,6 @@
             <select 
               v-model="newTask.task_id" 
               class="form-input"
-              @change="$emit('task-type-changed', newTask.task_id)"
             >
               <option value="" disabled>Выберите тип задачи</option>
               <option 
@@ -24,7 +23,7 @@
               </option>
             </select>
           </div>
-          
+<!--           
           <div class="form-group">
             <label>Исполнитель:</label>
             <select 
@@ -41,7 +40,7 @@
                 {{ user.surname }} {{ user.name }} {{ user.patronymic }} ({{ user.position }})
               </option>
             </select>
-          </div>
+          </div> -->
           
           <div class="form-group">
             <label>Описание задачи:</label>
@@ -76,26 +75,23 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  departmentUsers: {
-    type: Array,
-    default: () => []
-  }
+  // departmentUsers: {
+  //   type: Array,
+  //   default: () => []
+  // }
 });
 
 const emit = defineEmits(['close', 'save', 'task-type-changed']);
 
 const newTask = ref({
   task_id: null,
-  executor: null,
   description: '',
-  status: 1,
+  status: 0,
   create_date: String(new Date().toISOString().split('T')[0]),
-  execute_date: ''
 });
 
-
 const saveTask = () => {
-  if (!newTask.value.executor || !newTask.value.description) {
+  if (!newTask.value.description) {
     alert('Пожалуйста, заполните все обязательные поля');
     return;
   }

@@ -136,15 +136,22 @@
       @delete="handleDeleteTask"
       @complete="handleCompleteTask"
       @add-comment="handleAddComment"
+      @refresh-tasks="fetchTasks"
     />
 
-    <CreateTaskModal
+    <!-- <CreateTaskModal
       v-if="isCreateModalOpen"
       :task-types="taskTypes"
       :department-users="departmentUsers"
       @close="closeCreateModal"
       @save="handleCreateTask"
       @task-type-changed="handleTaskTypeChange"
+    /> -->
+    <CreateTaskModal
+      v-if="isCreateModalOpen"
+      :task-types="taskTypes"
+      @close="closeCreateModal"
+      @save="handleCreateTask"
     />
   </div>
 </template>
@@ -172,7 +179,7 @@ const tasks = ref({
   created: []
 });
 const taskTypes = ref([]);
-const departmentUsers = ref([]);
+// const departmentUsers = ref([]);
 
 const displayedTasks = computed(() => {
   const taskList = activeTab.value === 'assigned' 
@@ -244,16 +251,16 @@ const fetchTaskTypes = async () => {
   }
 };
 
-const fetchDepartmentUsers = async (departmentId) => {
-  try {
-    const response = await fetch(`http://localhost:8080/api/v1/depatments/user/${departmentId}`);
-    if (!response.ok) throw new Error('Ошибка загрузки пользователей отдела');
-    departmentUsers.value = (await response.json()).users || [];
-  } catch (error) {
-    console.error('Ошибка загрузки пользователей отдела:', error);
-    alert('Не удалось загрузить пользователей отдела');
-  }
-};
+// const fetchDepartmentUsers = async (departmentId) => {
+//   try {
+//     const response = await fetch(`http://localhost:8080/api/v1/depatments/user/${departmentId}`);
+//     if (!response.ok) throw new Error('Ошибка загрузки пользователей отдела');
+//     departmentUsers.value = (await response.json()).users || [];
+//   } catch (error) {
+//     console.error('Ошибка загрузки пользователей отдела:', error);
+//     alert('Не удалось загрузить пользователей отдела');
+//   }
+// };
 
 const openTaskModal = async (task) => {
   isLoading.value = true;
@@ -397,20 +404,18 @@ const closeCreateModal = () => {
   isCreateModalOpen.value = false;
 };
 
-const handleTaskTypeChange = (taskId) => {
-  const selectedType = taskTypes.value.find(t => t.id === taskId);
-  if (selectedType) {
-    fetchDepartmentUsers(selectedType.department_id);
-  }
-};
+// const handleTaskTypeChange = (taskId) => {
+//   const selectedType = taskTypes.value.find(t => t.id === taskId);
+//   if (selectedType) {
+//     fetchDepartmentUsers(selectedType.department_id);
+//   }
+// };
 
 const handleCreateTask = async ({ task }) => {
   try {
     const taskToCreate = {
       ...task,
       initiator: userStore.userData.id,
-      status: 0, // 0 - в работе
-      create_date: new Date().toISOString().split('T')[0]
     };
     
     const response = await fetch('http://localhost:8080/api/v1/tasks', {
@@ -512,8 +517,16 @@ onMounted(() => {
   grid-template-columns: 7% 15% 30% 15% 15% 18%;
   gap: 1px; 
   border-radius: 15px;
-  overflow: hidden; 
+  overflow: hidden;
   font-size: 20px;
+  
+  /* Вертикальная прокрутка */
+  max-height: 80vh; /* или любая другая подходящая высота */
+  overflow-y: auto;
+  
+  /* Стилизация скроллбара (невидимый) */
+  scrollbar-width: none; /* Для Firefox */
+  -ms-overflow-style: none; /* Для IE и Edge */
 }
 
 .grid-header {

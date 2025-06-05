@@ -9,7 +9,7 @@ import (
 
 type (
 	DepartmentService interface {
-		GetUsersByDepId(dep_id int) ([]entity.User, error)
+		GetUsersByTaskId(task_id int) ([]entity.User, error)
 	}
 	departmentService struct {
 		r repository.DepartmentRepository
@@ -24,10 +24,10 @@ func NewDepartmentService(r repository.DepartmentRepository, l *zap.Logger) Depa
 	}
 }
 
-func (ds departmentService) GetUsersByDepId(dep_id int) ([]entity.User, error) {
+func (ds departmentService) GetUsersByTaskId(task_id int) ([]entity.User, error) {
 	ds.l.Debug("IN DEPARTMENT SERVISE :: GET USERS")
 
-	u, err := ds.r.GetUserOnDepartment(dep_id)
+	u, err := ds.r.GetUserOnDepartmentByTaskID(task_id)
 	if err != nil {
 		return nil, err
 	}

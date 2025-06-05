@@ -14,6 +14,7 @@ type (
 		CreateTask(uc entity.UserTaskCreate) error
 		GetTaskByID(id int) (entity.UserTask, error)
 		ExecTask(id int, date string) error
+		ChangeExecutor(id, executor int) error
 		DeleteTask(id int) error
 	}
 	userTaskService struct {
@@ -54,12 +55,32 @@ func (u userTaskService) TaskByUser(userId int) ([]entity.UserTask, error) {
 func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
 	u.l.Debug("IN USER TASK SERVICE :: CREATE TASK")
 
-	err := u.r.CreateTask(uc)
+	var ut []entity.UserCountTask
+	ut, err := u.r.GetUserAndCountTasksByTaskID(uc.Task)
+	if err != nil {
+		return err
+	}
+
+	uc.Executor = findMinCountTask(ut)
+
+	err = u.r.CreateTask(uc)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func findMinCountTask(ut []entity.UserCountTask) int {
+	min := 9999999
+	id := 0
+	for _, u := range ut {
+		if u.Count < min {
+			min = u.Count
+			id = u.UserID
+		}
+	}
+	return id
 }
 
 func (u userTaskService) GetTaskByID(id int) (entity.UserTask, error) {
@@ -89,6 +110,17 @@ func (u userTaskService) DeleteTask(id int) error {
 	u.l.Debug("IN USER TASK SERVICE :: EXEC TASK")
 
 	err := u.r.DeleteTask(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u userTaskService) ChangeExecutor(id, executor int) error {
+	u.l.Debug("IN USER TASK SERVICE :: CHANGE EXECUTOR FOR TASK")
+
+	err := u.r.UpdateExecutor(id, executor)
 	if err != nil {
 		return err
 	}

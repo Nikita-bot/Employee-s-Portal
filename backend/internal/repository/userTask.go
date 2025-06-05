@@ -14,10 +14,12 @@ type (
 	UserTaskRepository interface {
 		TaskForUser(userId int) ([]entity.UserTask, error)
 		TaskByUser(userId int) ([]entity.UserTask, error)
+		GetUserAndCountTasksByTaskID(id int) ([]entity.UserCountTask, error)
 		CreateTask(uc entity.UserTaskCreate) error
 		GetTaskByID(id int) (entity.UserTask, error)
 		DeleteTask(id int) error
 		UpdateTask(id int, date string) error
+		UpdateExecutor(id int, executor int) error
 	}
 	userTaskRepo struct {
 		db *sqlx.DB
@@ -122,6 +124,37 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 	return ut, nil
 }
 
+/*
+Получение id пользователей и кол-во задач по task_id
+
+SELECT u.id as user_id,COUNT(ut.id) as task_count
+FROM users u
+LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
+join tasks t  on t.id  = $1 and t.department_id = u.department_id
+GROUP BY u.id
+*/
+
+func (u userTaskRepo) GetUserAndCountTasksByTaskID(id int) ([]entity.UserCountTask, error) {
+
+	var uc []entity.UserCountTask
+
+	query := `
+		SELECT u.id as user_id,COUNT(ut.id) as task_count
+		FROM users u
+		LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
+		join tasks t  on t.id  = $1 and t.department_id = u.department_id
+		GROUP BY u.id
+	`
+
+	err := u.db.Select(&uc, query, id)
+	if err != nil {
+		u.l.Error(err.Error())
+		return []entity.UserCountTask{}, err
+	}
+
+	return uc, nil
+}
+
 func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 	u.l.Debug("IN USER TASK REPO :: CREATE TASK")
 
@@ -130,11 +163,11 @@ func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 
 	row := u.db.QueryRow(`
     INSERT INTO user_task 
-    (task_id, executor, initiator, description, status, create_date, execute_date)
-    VALUES ($1, $2, $3, $4, $5, $6, $7) 
+    (task_id, executor, initiator, description, status, create_date)
+    VALUES ($1, $2, $3, $4, $5, $6) 
     RETURNING id`,
 		uc.Task, uc.Executor, uc.Initiator, uc.Description,
-		uc.Status, uc.CreateDate, uc.ExecuteDate)
+		uc.Status, uc.CreateDate)
 
 	err := row.Scan(&id)
 	if err != nil {
@@ -144,7 +177,7 @@ func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 
 	tj = entity.TaskJournal{
 		UserTaskID:    int(id),
-		Action:        "Задача" + strconv.Itoa(int(id)) + "создана",
+		Action:        "Задача " + strconv.Itoa(int(id)) + " создана",
 		Creation_date: time.Now().String(),
 	}
 
@@ -211,6 +244,17 @@ func (u userTaskRepo) DeleteTask(id int) error {
 		return errors.New("Can't delete Task")
 	}
 
+	tj := entity.TaskJournal{
+		UserTaskID:    int(id),
+		Action:        "Задача " + strconv.Itoa(int(id)) + " удалена",
+		Creation_date: time.Now().String(),
+	}
+
+	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
+	if err != nil {
+		u.l.Error(err.Error())
+	}
+
 	return nil
 }
 
@@ -225,6 +269,44 @@ func (u userTaskRepo) UpdateTask(id int, date string) error {
 	if err != nil {
 		u.l.Error(err.Error())
 		return errors.New("CAN`T EXEC TASK")
+	}
+
+	tj := entity.TaskJournal{
+		UserTaskID:    int(id),
+		Action:        "Задача " + strconv.Itoa(int(id)) + " выполнена",
+		Creation_date: time.Now().String(),
+	}
+
+	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
+	if err != nil {
+		u.l.Error(err.Error())
+	}
+
+	return nil
+}
+
+func (u userTaskRepo) UpdateExecutor(id int, executor int) error {
+	u.l.Debug("IN USER TASK REPO :: CHANGE EXECUTOR TASK")
+
+	query := `
+		UPDATE user_task SET executor=$1 WHERE id=$2
+	`
+
+	_, err := u.db.Exec(query, executor, id)
+	if err != nil {
+		u.l.Error(err.Error())
+		return errors.New("CAN`T CHANGE EXECUTOR")
+	}
+
+	tj := entity.TaskJournal{
+		UserTaskID:    int(id),
+		Action:        "У задачи " + strconv.Itoa(int(id)) + " изменен исполнитель",
+		Creation_date: time.Now().String(),
+	}
+
+	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
+	if err != nil {
+		u.l.Error(err.Error())
 	}
 
 	return nil

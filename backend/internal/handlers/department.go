@@ -28,7 +28,7 @@ func NewDepartmentHandler(s service.DepartmentService, l *zap.Logger, e *echo.Ec
 }
 
 func (dh departmentHandler) Handle() {
-	dh.e.GET("/api/v1/depatments/user/:dep_id", dh.GetUsersOnDepaertmets)
+	dh.e.GET("/api/v1/depatments/user/:user_task_id", dh.GetUsersOnDepaertmets)
 }
 
 func (dh departmentHandler) GetUsersOnDepaertmets(c echo.Context) error {
@@ -36,12 +36,12 @@ func (dh departmentHandler) GetUsersOnDepaertmets(c echo.Context) error {
 
 	var request = make(map[string]interface{})
 
-	id, err := strconv.Atoi(c.Param("dep_id"))
+	id, err := strconv.Atoi(c.Param("user_task_id"))
 	if err != nil {
 		return c.String(400, "ID MUST BE INT")
 	}
 
-	user, err := dh.s.GetUsersByDepId(id)
+	user, err := dh.s.GetUsersByTaskId(id)
 	if err != nil {
 		return c.JSON(401, err.Error())
 	}

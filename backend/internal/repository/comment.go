@@ -47,7 +47,7 @@ func (cr commentRepo) GetComments(taskId int) ([]entity.Comment, error) {
         WHERE 
             c.user_task_id = $1
         ORDER BY 
-            c.creation_date DESC
+            c.creation_date ASC
     `
 
 	err := cr.db.Select(&c, query, taskId)

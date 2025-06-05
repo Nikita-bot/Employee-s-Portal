@@ -8,7 +8,21 @@
       <div class="modal-content">
         <div class="task-info">
           <p><strong>Автор:</strong> {{ formatFullName(task.initiator.surname, task.initiator.name, task.initiator.patronymic) }}</p>
-          <p><strong>Исполнитель:</strong> {{ formatFullName(task.executor.surname, task.executor.name, task.executor.patronymic) }}</p>
+          <p><strong>Исполнитель:</strong> 
+            <span v-if="!isChangingExecutor">{{ formatFullName(task.executor.surname, task.executor.name, task.executor.patronymic) }}</span>
+            <select v-else v-model="selectedExecutor" class="executor-select">
+              <option v-for="user in departmentUsers" :key="user.id" :value="user.id">
+                {{ formatFullName(user.surname, user.name, user.patronymic) }}
+              </option>
+            </select>
+            <button 
+              v-if="isExecutor && !isChangingExecutor" 
+              class="change-executor-btn"
+              @click="startChangeExecutor"
+            >
+              Сменить исполнителя
+            </button>
+          </p>
           <p><strong>Описание:</strong> {{ task.description }}</p>
           <p><strong>Статус:</strong> {{ task.status }}</p>
           <p><strong>Дата создания:</strong> {{task.create_date }}</p>
@@ -34,6 +48,10 @@
       </div>
 
       <div class="modal-footer">
+        <div v-if="isChangingExecutor" class="executor-actions">
+          <button class="save-btn" @click="saveNewExecutor">Сохранить</button>
+          <button class="cancel-btn" @click="cancelChangeExecutor">Отмена</button>
+        </div>
         <button 
           v-if="isCreator"
           class="delete-btn"
@@ -55,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, watch } from 'vue';
 
 const props = defineProps({
   task: {
@@ -69,12 +87,19 @@ const props = defineProps({
   isExecutor: {
     type: Boolean,
     default: false
+  },
+  currentUserId: {
+    type: Number,
+    required: true
   }
 });
 
-const emit = defineEmits(['close', 'delete', 'complete', 'add-comment']);
+const emit = defineEmits(['close', 'delete', 'complete', 'add-comment', 'refresh-tasks']);
 
 const newComment = ref('');
+const departmentUsers = ref([]);
+const isChangingExecutor = ref(false);
+const selectedExecutor = ref(null);
 
 const formatFullName = (surname, name, patronymic) => {
   if (!surname) return '';
@@ -89,14 +114,88 @@ const formatFullName = (surname, name, patronymic) => {
   return formatted;
 };
 
+const changeExecutor = async () => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/v1/tasks/executor/${props.task.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        executor_id: selectedExecutor.value
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const newExecutor = departmentUsers.value.find(user => user.id === selectedExecutor.value);
+    
+    props.task.executor = newExecutor;
+    isChangingExecutor.value = false;
+    emit('close');
+    emit('refresh-tasks')
+    
+  } catch (error) {
+    console.error('Ошибка при изменении исполнителя:', error);
+  }
+};
+
 const addComment = () => {
   if (!newComment.value.trim()) return;
   emit('add-comment', newComment.value);
   newComment.value = '';
 };
 
-</script>
+const fetchDepartmentUsers = async () => {
+  try {
+    console.log(props.task.id)
+    const response = await fetch(`http://localhost:8080/api/v1/depatments/user/${props.task.id}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    departmentUsers.value = data.users;
+  } catch (error) {
+    console.error('Ошибка при получении пользователей отдела:', error);
+  }
+};
 
+const startChangeExecutor = async () => {
+  await fetchDepartmentUsers();
+  selectedExecutor.value = props.task.executor.id;
+  isChangingExecutor.value = true;
+};
+
+const cancelChangeExecutor = () => {
+  isChangingExecutor.value = false;
+};
+
+const saveNewExecutor = async () => {
+  if (selectedExecutor.value && selectedExecutor.value !== props.task.executor.id) {
+    await changeExecutor()
+  }
+  isChangingExecutor.value = false;
+};
+
+// Загружаем пользователей отдела при открытии модального окна, если задача назначена текущему пользователю
+onMounted(() => {
+  if (props.isExecutor) {
+    fetchDepartmentUsers();
+  }
+});
+
+// Следим за изменением задачи
+watch(() => props.task, () => {
+  if (props.isExecutor) {
+    fetchDepartmentUsers();
+  }
+});
+</script>
 
 <style scoped>
 .modal-overlay {
@@ -143,6 +242,26 @@ const addComment = () => {
 
 .task-info p {
   margin: 10px 0;
+  display: flex;
+  align-items: center;
+}
+
+.executor-select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  margin-left: 10px;
+}
+
+.change-executor-btn {
+  margin-left: 10px;
+  padding: 4px 8px;
+  background-color: #5662DE;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
 }
 
 .comments-section {
@@ -214,6 +333,30 @@ const addComment = () => {
   color: #FFFFFF;
   width: 160px;
   padding: 8px 15px;
+  cursor: pointer;
+}
+
+.executor-actions {
+  display: flex;
+  gap: 10px;
+  margin-right: auto;
+}
+
+.save-btn {
+  padding: 8px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  padding: 8px 15px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
 }
 
