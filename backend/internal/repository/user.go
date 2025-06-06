@@ -60,9 +60,12 @@ func (u userRepo) GetUserByLogin(login string) (entity.User, error) {
 
 	if data, err := u.r.Get(context.Background(), cacheKey).Bytes(); err == nil {
 		if err := json.Unmarshal(data, &user); err == nil {
+			u.l.Debug("Пользователь найден в Кеше")
 			return user, nil
 		}
 	}
+
+	u.l.Debug("Пользователь не найден в Кеше. Поиск в БД")
 
 	query := `
 		SELECT id,name,surname,patronymic,position
@@ -114,9 +117,12 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 
 	if data, err := u.r.Get(context.Background(), cacheKey).Bytes(); err == nil {
 		if err := json.Unmarshal(data, &user); err == nil {
+			u.l.Debug("Пользователь найден в Кеше")
 			return user, nil
 		}
 	}
+
+	u.l.Debug("Пользователь не найден в Кеше. Поиск в БД")
 
 	query := `
 		SELECT id,name,surname,patronymic,position

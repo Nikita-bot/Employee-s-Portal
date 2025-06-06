@@ -24,7 +24,7 @@ services:
     ports:
       - ${REDIS_PORT}:${REDIS_DOCKER_PORT}
     networks:
-      - median-net
+      - portal_network
 
 
   portal_backend:
