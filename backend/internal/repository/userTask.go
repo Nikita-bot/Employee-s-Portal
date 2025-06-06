@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -24,13 +25,15 @@ type (
 	userTaskRepo struct {
 		db *sqlx.DB
 		l  *zap.Logger
+		r  *redis.Client
 	}
 )
 
-func NewUserTaskRepo(db *sqlx.DB, l *zap.Logger) UserTaskRepository {
+func NewUserTaskRepo(db *sqlx.DB, l *zap.Logger, r *redis.Client) UserTaskRepository {
 	return &userTaskRepo{
 		db: db,
 		l:  l,
+		r:  r,
 	}
 }
 
@@ -132,6 +135,7 @@ FROM users u
 LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
 join tasks t  on t.id  = $1 and t.department_id = u.department_id
 GROUP BY u.id
+
 */
 
 func (u userTaskRepo) GetUserAndCountTasksByTaskID(id int) ([]entity.UserCountTask, error) {

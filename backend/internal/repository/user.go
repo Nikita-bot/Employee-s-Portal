@@ -1,9 +1,14 @@
 package repository
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"portal/internal/entity"
+	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -17,13 +22,15 @@ type (
 	userRepo struct {
 		db *sqlx.DB
 		l  *zap.Logger
+		r  *redis.Client
 	}
 )
 
-func NewUserRepo(db *sqlx.DB, l *zap.Logger) UserRepository {
+func NewUserRepo(db *sqlx.DB, l *zap.Logger, r *redis.Client) UserRepository {
 	return &userRepo{
 		db: db,
 		l:  l,
+		r:  r,
 	}
 }
 
@@ -49,6 +56,14 @@ func (u userRepo) GetUserByLogin(login string) (entity.User, error) {
 
 	var user entity.User
 
+	cacheKey := fmt.Sprintf("userLogin:%s", login)
+
+	if data, err := u.r.Get(context.Background(), cacheKey).Bytes(); err == nil {
+		if err := json.Unmarshal(data, &user); err == nil {
+			return user, nil
+		}
+	}
+
 	query := `
 		SELECT id,name,surname,patronymic,position
 		,email,phone,tg_link,tg_id,pasport,snyls,
@@ -66,6 +81,10 @@ func (u userRepo) GetUserByLogin(login string) (entity.User, error) {
 	user.Department = department
 	boss := u.GetUserBoss(user.ID)
 	user.Boss = boss
+
+	if data, err := json.Marshal(user); err == nil {
+		u.r.Set(context.Background(), cacheKey, data, time.Hour)
+	}
 
 	return user, nil
 }
@@ -91,6 +110,14 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 
 	var user entity.User
 
+	cacheKey := fmt.Sprintf("user:%d", id)
+
+	if data, err := u.r.Get(context.Background(), cacheKey).Bytes(); err == nil {
+		if err := json.Unmarshal(data, &user); err == nil {
+			return user, nil
+		}
+	}
+
 	query := `
 		SELECT id,name,surname,patronymic,position
 		,email,phone,tg_link,tg_id,pasport,snyls,
@@ -108,6 +135,11 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 	user.Department = department
 	boss := u.GetUserBoss(user.ID)
 	user.Boss = boss
+
+	if data, err := json.Marshal(user); err == nil {
+		u.r.Set(context.Background(), cacheKey, data, time.Hour) // TTL 1 час
+	}
+
 	return user, nil
 }
 

@@ -37,13 +37,15 @@ func main() {
 	}
 	logger.Debug("БД готова")
 
+	redis := database.InitRedis(config, logger)
+
 	server, err := server.InitServer()
 	if err != nil {
 		logger.Error(err.Error())
 		panic("Не удалось инициализировать сервер")
 	}
 
-	repo := repository.NewRepository(db, logger)
+	repo := repository.NewRepository(db, logger, redis)
 
 	service := service.NewService(logger, repo)
 

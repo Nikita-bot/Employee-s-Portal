@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -14,10 +15,10 @@ type Repository struct {
 	CommentRepo    CommetRepository
 }
 
-func NewRepository(db *sqlx.DB, l *zap.Logger) Repository {
+func NewRepository(db *sqlx.DB, l *zap.Logger, r *redis.Client) Repository {
 	return Repository{
-		UserRepo:       NewUserRepo(db, l),
-		UserTaskRepo:   NewUserTaskRepo(db, l),
+		UserRepo:       NewUserRepo(db, l, r),
+		UserTaskRepo:   NewUserTaskRepo(db, l, r),
 		TaskRepo:       NewTaskRepo(db, l),
 		RoleRepo:       NewRoleRepo(db, l),
 		DepartmentRepo: NewDepartmentRepo(db, l),

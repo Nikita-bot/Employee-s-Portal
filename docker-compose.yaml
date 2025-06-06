@@ -16,6 +16,15 @@ services:
       - ${DB_PORT}:${DB_DOCKER_PORT}
     networks:
       - portal_network
+    
+
+  redis_portal:
+    image: "redis:alpine"
+    container_name: geomap_redis
+    ports:
+      - ${REDIS_PORT}:${REDIS_DOCKER_PORT}
+    networks:
+      - median-net
 
 
   portal_backend:
