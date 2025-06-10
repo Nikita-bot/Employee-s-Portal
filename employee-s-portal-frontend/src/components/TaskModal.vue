@@ -5,8 +5,26 @@
         <h3>Задача #{{ task.id }}</h3>
       </div>
       
+      <div class="tabs">
+        <button 
+          class="tab-button" 
+          :class="{ 'active': activeTab === 'info' }"
+          @click="activeTab = 'info'"
+        >
+          Информация
+        </button>
+        <button 
+          class="tab-button" 
+          :class="{ 'active': activeTab === 'journal' }"
+          @click="activeTab = 'journal'"
+        >
+          Журнал
+        </button>
+      </div>
+      
       <div class="modal-content">
-        <div class="task-info">
+        <!-- Вкладка с информацией о задаче -->
+        <div v-if="activeTab === 'info'" class="task-info">
           <p><strong>Автор:</strong> {{ formatFullName(task.initiator.surname, task.initiator.name, task.initiator.patronymic) }}</p>
           <p><strong>Исполнитель:</strong> 
             <span v-if="!isChangingExecutor">{{ formatFullName(task.executor.surname, task.executor.name, task.executor.patronymic) }}</span>
@@ -27,40 +45,64 @@
           <p><strong>Статус:</strong> {{ task.status }}</p>
           <p><strong>Дата создания:</strong> {{task.create_date }}</p>
           <p><strong>Дата выполнения:</strong> {{ task.execute_date ? task.execute_date : 'Не выполнено' }}</p>
+
+          <div class="comments-section">
+            <h4>Комментарии:</h4>
+            <div v-for="comment in task.comments" :key="comment.id" class="comment">
+              <p><strong>{{formatFullName(comment.author.surname, comment.author.name,comment.author.patronymic)  }}:</strong> {{ comment.comment }}</p>
+              <small>{{ comment.creation_date }}</small>
+            </div>
+            
+            <div class="new-comment">
+              <textarea 
+                v-model="newComment"
+                placeholder="Напишите комментарий..."
+                rows="3"
+              ></textarea>
+              <button @click="addComment">Отправить</button>
+            </div>
+          </div>
         </div>
 
-        <div class="comments-section">
-          <h4>Комментарии:</h4>
-          <div v-for="comment in task.comments" :key="comment.id" class="comment">
-            <p><strong>{{formatFullName(comment.author.surname, comment.author.name,comment.author.patronymic)  }}:</strong> {{ comment.comment }}</p>
-            <small>{{ comment.creation_date }}</small>
-          </div>
-          
-          <div class="new-comment">
-            <textarea 
-              v-model="newComment"
-              placeholder="Напишите комментарий..."
-              rows="3"
-            ></textarea>
-            <button @click="addComment">Отправить</button>
+        <!-- Вкладка с журналом изменений -->
+        <div v-if="activeTab === 'journal'" class="journal-section">
+          <div v-if="journalLoading" class="loading">Загрузка журнала...</div>
+          <div v-else>
+            <table class="journal-table">
+              <thead>
+                <tr>
+                  <th>Дата</th>
+                  <th>Действие</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(entry, index) in journalEntries" :key="index">
+                  <td>{{ formatDate(entry.creation_date) }}</td>
+                  <td>{{ entry.action }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="journalEntries.length === 0" class="no-entries">
+              В журнале нет записей
+            </div>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <div v-if="isChangingExecutor" class="executor-actions">
+        <div v-if="isChangingExecutor && activeTab === 'info'" class="executor-actions">
           <button class="save-btn" @click="saveNewExecutor">Сохранить</button>
           <button class="cancel-btn" @click="cancelChangeExecutor">Отмена</button>
         </div>
         <button 
-          v-if="isCreator"
+          v-if="isCreator && activeTab === 'info'"
           class="delete-btn"
           @click="$emit('delete')"
         >
           Удалить задачу
         </button>
         <button 
-          v-if="isExecutor && task.status !== 1"
+          v-if="isExecutor && task.status !== 1 && activeTab === 'info'"
           class="complete-btn"
           @click="$emit('complete')"
         >
@@ -100,6 +142,9 @@ const newComment = ref('');
 const departmentUsers = ref([]);
 const isChangingExecutor = ref(false);
 const selectedExecutor = ref(null);
+const activeTab = ref('info');
+const journalEntries = ref([]);
+const journalLoading = ref(false);
 
 const formatFullName = (surname, name, patronymic) => {
   if (!surname) return '';
@@ -112,6 +157,30 @@ const formatFullName = (surname, name, patronymic) => {
     }
   }
   return formatted;
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleString();
+};
+
+const fetchJournal = async () => {
+  try {
+    journalLoading.value = true;
+    const response = await fetch(`http://localhost:8080/api/v1/journal/${props.task.id}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    journalEntries.value = data.journal || [];
+  } catch (error) {
+    console.error('Ошибка при получении журнала:', error);
+  } finally {
+    journalLoading.value = false;
+  }
 };
 
 const changeExecutor = async () => {
@@ -195,6 +264,13 @@ watch(() => props.task, () => {
     fetchDepartmentUsers();
   }
 });
+
+// Загружаем журнал при переключении на вкладку
+watch(() => activeTab.value, (newTab) => {
+  if (newTab === 'journal') {
+    fetchJournal();
+  }
+});
 </script>
 
 <style scoped>
@@ -228,6 +304,31 @@ watch(() => props.task, () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  margin: 2px 0px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.tab-button:hover {
+  background-color: #f5f5f5;
+}
+
+.tab-button.active {
+  background-color: #5662DE;
+  color: white;
 }
 
 .modal-content {
@@ -299,6 +400,40 @@ watch(() => props.task, () => {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+}
+
+/* Стили для журнала */
+.journal-section {
+  margin-top: 10px;
+}
+
+.journal-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.journal-table th, .journal-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.journal-table th {
+  background-color: #f5f5f5;
+  font-weight: 500;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.no-entries {
+  padding: 20px;
+  text-align: center;
+  color: #888;
 }
 
 .modal-footer {

@@ -274,7 +274,7 @@ const openTaskModal = async (task) => {
       createdDate: fullTask.create_date,
       assignedDate: fullTask.execute_date ? fullTask.execute_date : '-',
       status: getStatusText(fullTask.status),
-      comments: await fetchComments(fullTask.id) // Здесь можно добавить загрузку комментариев
+      comments: sortCommentsByDate(await fetchComments(fullTask.id), true) // Здесь можно добавить загрузку комментариев
     };
     
     isTaskModalOpen.value = true;
@@ -285,6 +285,22 @@ const openTaskModal = async (task) => {
     isLoading.value = false;
   }
 };
+
+function sortCommentsByDate(comments, ascending = false) {
+  return comments.sort((a, b) => {
+    const parseDate = (dateStr) => {
+      const [datePart, timePart] = dateStr.split(', ');
+      const [day, month, year] = datePart.split('.');
+      const [hours, minutes, seconds] = timePart.split(':');
+      return new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`);
+    };
+
+    const dateA = parseDate(a.creation_date);
+    const dateB = parseDate(b.creation_date);
+    
+    return ascending ? dateA - dateB : dateB - dateA;
+  });
+}
 
 const closeTaskModal = () => {
   isTaskModalOpen.value = false;

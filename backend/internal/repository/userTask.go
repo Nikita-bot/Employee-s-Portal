@@ -179,10 +179,11 @@ func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 		return err
 	}
 
+	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
 	tj = entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "Задача " + strconv.Itoa(int(id)) + " создана",
-		Creation_date: time.Now().String(),
+		Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
 	}
 
 	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
@@ -248,10 +249,11 @@ func (u userTaskRepo) DeleteTask(id int) error {
 		return errors.New("Can't delete Task")
 	}
 
+	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
 	tj := entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "Задача " + strconv.Itoa(int(id)) + " удалена",
-		Creation_date: time.Now().String(),
+		Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
 	}
 
 	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
@@ -275,10 +277,11 @@ func (u userTaskRepo) UpdateTask(id int, date string) error {
 		return errors.New("CAN`T EXEC TASK")
 	}
 
+	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
 	tj := entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "Задача " + strconv.Itoa(int(id)) + " выполнена",
-		Creation_date: time.Now().String(),
+		Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
 	}
 
 	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
@@ -302,10 +305,11 @@ func (u userTaskRepo) UpdateExecutor(id int, executor int) error {
 		return errors.New("CAN`T CHANGE EXECUTOR")
 	}
 
+	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
 	tj := entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "У задачи " + strconv.Itoa(int(id)) + " изменен исполнитель",
-		Creation_date: time.Now().String(),
+		Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
 	}
 
 	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
