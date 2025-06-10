@@ -13,6 +13,7 @@ type Service struct {
 	RoleService       RoleService
 	DepartmentService DepartmentService
 	CommentService    CommentService
+	JournalService    JournalService
 }
 
 func NewService(l *zap.Logger, r repository.Repository) Service {
@@ -23,5 +24,6 @@ func NewService(l *zap.Logger, r repository.Repository) Service {
 		RoleService:       NewRoleService(r.RoleRepo, l),
 		DepartmentService: NewDepartmentService(r.DepartmentRepo, l),
 		CommentService:    NewCommentService(r.CommentRepo, l),
+		JournalService:    NewJournalService(r.JournalRepo, l),
 	}
 }

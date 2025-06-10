@@ -13,6 +13,7 @@ type Repository struct {
 	RoleRepo       RoleRepository
 	DepartmentRepo DepartmentRepository
 	CommentRepo    CommetRepository
+	JournalRepo    JournalRepository
 }
 
 func NewRepository(db *sqlx.DB, l *zap.Logger, r *redis.Client) Repository {
@@ -23,5 +24,6 @@ func NewRepository(db *sqlx.DB, l *zap.Logger, r *redis.Client) Repository {
 		RoleRepo:       NewRoleRepo(db, l),
 		DepartmentRepo: NewDepartmentRepo(db, l),
 		CommentRepo:    NewCommentRepo(db, l),
+		JournalRepo:    NewJournalRepo(db, l),
 	}
 }
