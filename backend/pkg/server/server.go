@@ -1,11 +1,13 @@
 package server
 
 import (
+	"portal/pkg/config"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
 
-func InitServer() (*echo.Echo, error) {
+func InitServer(c config.Config) (*echo.Echo, error) {
 	e := echo.New()
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -23,4 +25,10 @@ func InitServer() (*echo.Echo, error) {
 	}))
 
 	return e, nil
+}
+
+func jwtMiddleware(c config.Config) echo.MiddlewareFunc {
+	return middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey: []byte(c.Secret),
+	})
 }

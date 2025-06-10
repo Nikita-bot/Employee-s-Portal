@@ -13,6 +13,7 @@ type Config struct {
 	R_host  string `env:"REDIS_HOST"`
 	R_port  string `env:"REDIS_PORT"`
 	Token   string `env:"TOKEN_BOT"`
+	Secret  string `env:"SECRET_KEY"`
 }
 
 func New() (Config, error) {

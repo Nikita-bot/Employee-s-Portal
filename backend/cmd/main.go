@@ -39,7 +39,7 @@ func main() {
 
 	redis := database.InitRedis(config, logger)
 
-	server, err := server.InitServer()
+	server, err := server.InitServer(config)
 	if err != nil {
 		logger.Error(err.Error())
 		panic("Не удалось инициализировать сервер")
