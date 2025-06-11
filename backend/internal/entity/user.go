@@ -26,6 +26,7 @@ type (
 		Name       string `json:"name" db:"name"`
 		Surname    string `json:"surname" db:"surname"`
 		Patronymic string `json:"patronymic" db:"patronymic"`
+		Department string `json:"department" db:"department"`
 	}
 
 	UserCreate struct {

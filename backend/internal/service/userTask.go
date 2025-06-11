@@ -55,17 +55,22 @@ func (u userTaskService) TaskByUser(userId int) ([]entity.UserTask, error) {
 func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
 	u.l.Debug("IN USER TASK SERVICE :: CREATE TASK")
 
-	var ut []entity.UserCountTask
-	ut, err := u.r.GetUserAndCountTasksByTaskID(uc.Task)
-	if err != nil {
-		return err
-	}
+	var deps []entity.Department
 
-	uc.Executor = findMinCountTask(ut)
+	deps = u.r.GetDepartmentByTaskID(uc.Task)
 
-	err = u.r.CreateTask(uc)
-	if err != nil {
-		return err
+	for _, dep := range deps {
+		ut, err := u.r.GetUserAndCountTasksByDepID(dep.ID)
+		if err != nil {
+			return err
+		}
+		uc.Executor = findMinCountTask(ut)
+
+		err = u.r.CreateTask(uc)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil

@@ -41,6 +41,7 @@
               Сменить исполнителя
             </button>
           </p>
+          <p><strong>Отделение:</strong>{{ task.executor.department }}</p>
           <p><strong>Описание:</strong> {{ task.description }}</p>
           <p><strong>Статус:</strong> {{ task.status }}</p>
           <p><strong>Дата создания:</strong> {{task.create_date }}</p>

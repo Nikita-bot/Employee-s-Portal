@@ -32,8 +32,8 @@ func (dr departmentRepo) GetUserOnDepartmentByTaskID(task_id int) ([]entity.User
 	query := `
 		SELECT u.id, u.name, u.surname, u.patronymic, u.position 
 		FROM users u
-		join tasks t on u.department_id = t.department_id
-		join user_task ut on ut.task_id = t.id
+		JOIN task_department td ON u.department_id = td.department_id
+		JOIN user_task ut ON ut.task_id = td.task_id
 		WHERE ut.id = $1
 	`
 

@@ -118,7 +118,7 @@ img {
 }
 
 .profileMenu {
-  width: 300px;
+  width: 350px;
   margin-top: 20px;
   margin-right: 10px;
   font-size: 20px;

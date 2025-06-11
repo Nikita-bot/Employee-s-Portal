@@ -15,8 +15,9 @@ type (
 	UserTaskRepository interface {
 		TaskForUser(userId int) ([]entity.UserTask, error)
 		TaskByUser(userId int) ([]entity.UserTask, error)
-		GetUserAndCountTasksByTaskID(id int) ([]entity.UserCountTask, error)
+		GetUserAndCountTasksByDepID(id int) ([]entity.UserCountTask, error)
 		CreateTask(uc entity.UserTaskCreate) error
+		GetDepartmentByTaskID(task_id int) []entity.Department
 		GetTaskByID(id int) (entity.UserTask, error)
 		DeleteTask(id int) error
 		UpdateTask(id int, date string) error
@@ -127,26 +128,32 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 	return ut, nil
 }
 
-/*
-Получение id пользователей и кол-во задач по task_id
+func (u userTaskRepo) GetDepartmentByTaskID(task_id int) []entity.Department {
+	query := `
+        SELECT d.id, d.name 
+        FROM departments d
+        JOIN task_department td ON d.id = td.department_id
+        WHERE td.task_id = $1
+    `
 
-SELECT u.id as user_id,COUNT(ut.id) as task_count
-FROM users u
-LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
-join tasks t  on t.id  = $1 and t.department_id = u.department_id
-GROUP BY u.id
+	var departments []entity.Department
+	err := u.db.Select(&departments, query, task_id)
+	if err != nil {
+		u.l.Error(err.Error())
+	}
 
-*/
+	return departments
+}
 
-func (u userTaskRepo) GetUserAndCountTasksByTaskID(id int) ([]entity.UserCountTask, error) {
+func (u userTaskRepo) GetUserAndCountTasksByDepID(id int) ([]entity.UserCountTask, error) {
 
 	var uc []entity.UserCountTask
 
 	query := `
-		SELECT u.id as user_id,COUNT(ut.id) as task_count
+		SELECT u.id as user_id, COUNT(ut.id) as task_count
 		FROM users u
 		LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
-		join tasks t  on t.id  = $1 and t.department_id = u.department_id
+		WHERE u.department_id = $1
 		GROUP BY u.id
 	`
 
@@ -179,12 +186,13 @@ func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 		return err
 	}
 
-	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
+	loc := time.FixedZone("UTC+7", 7*60*60)
 	tj = entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "Задача " + strconv.Itoa(int(id)) + " создана",
 		Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
 	}
+	u.l.Debug("IN USER TASK REPO :: CREATE LOGGING IN JOURNAL")
 
 	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)
 	if err != nil {
@@ -209,6 +217,7 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
             exec.name AS "executor.name",
             exec.surname AS "executor.surname",
             exec.patronymic AS "executor.patronymic",
+			d.name AS "executor.department",
             -- Данные инициатора
             init.id AS "initiator.id",
             init.name AS "initiator.name",
@@ -220,6 +229,7 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
             users exec ON ut.executor = exec.id
         JOIN 
             users init ON ut.initiator = init.id
+		JOIN departments d on d.id = exec.department_id
         WHERE 
             ut.id = $1 
             AND ut.status != 3
@@ -249,7 +259,7 @@ func (u userTaskRepo) DeleteTask(id int) error {
 		return errors.New("Can't delete Task")
 	}
 
-	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
+	loc := time.FixedZone("UTC+7", 7*60*60)
 	tj := entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "Задача " + strconv.Itoa(int(id)) + " удалена",
@@ -277,7 +287,7 @@ func (u userTaskRepo) UpdateTask(id int, date string) error {
 		return errors.New("CAN`T EXEC TASK")
 	}
 
-	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
+	loc := time.FixedZone("UTC+7", 7*60*60)
 	tj := entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "Задача " + strconv.Itoa(int(id)) + " выполнена",
@@ -305,7 +315,7 @@ func (u userTaskRepo) UpdateExecutor(id int, executor int) error {
 		return errors.New("CAN`T CHANGE EXECUTOR")
 	}
 
-	loc, _ := time.LoadLocation("Asia/Krasnoyarsk")
+	loc := time.FixedZone("UTC+7", 7*60*60)
 	tj := entity.TaskJournal{
 		UserTaskID:    int(id),
 		Action:        "У задачи " + strconv.Itoa(int(id)) + " изменен исполнитель",

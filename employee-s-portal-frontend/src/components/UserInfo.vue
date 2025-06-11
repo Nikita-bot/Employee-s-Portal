@@ -240,7 +240,7 @@ onMounted(() => {
 
         .info{
             display: flex;
-            margin-left: 50px;
+            margin-left: 40px;
         }
         .infoName{
             margin-right: 20px;
