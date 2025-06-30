@@ -1,10 +1,27 @@
 <template>
   <div class="header">
-    <img :src="logo" alt="Логотип">
-    <div class="logoText">
-      <p>{{ orgName }}</p>
-      <p class="portalName">{{ portalName }}</p>
+    <div class="logoBlock">
+      <img :src="logo" alt="Логотип">
+      <div class="logoText">
+        <p>{{ orgName }}</p>
+        <p class="portalName">{{ portalName }}</p>
+      </div>
     </div>
+    
+
+    <!-- Новые вкладки -->
+    <div class="tabs">
+      <div 
+        v-for="tab in tabs" 
+        :key="tab.name"
+        class="tab"
+        :class="{ active: activeTab === tab.name }"
+        @click="selectTab(tab)"
+      >
+        {{ tab.title }}
+      </div>
+    </div>
+
     <div class="profileMenu" @click.stop="toggleMenu">
       <img class="photoProfile" :src="logo" alt="Профиль">
       <p class="name">{{ formattedUserName }}</p>
@@ -26,19 +43,31 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import logo from '@/assets/logo.png';
 
 const router = useRouter();
 const userStore = useUserStore();
+const route = useRoute();
 const isMenuOpen = ref(false);
+const activeTab = ref(null);
 
 const orgName = 'ГАУЗ ККБСМБ им. Подгорбунского';
 const portalName = 'Корпоративный портал';
 
-// Форматируем имя пользователя
+const tabs = [
+  { name: 'chat', title: 'Чат', route: '/chat' },
+  { name: 'news', title: 'Новости', route: '/news' },
+  { name: 'support', title: 'Поддержка', route: '/support' },
+];
+
+const selectTab = (tab) => {
+  activeTab.value = tab.name;
+  router.push(tab.route);
+};
+
 const formattedUserName = computed(() => {
   if (!userStore.userData) return 'Гость';
   const { surname, name, patronymic } = userStore.userData;
@@ -55,7 +84,6 @@ const closeMenu = () => {
 
 const goToProfile = () => {
   if (router.currentRoute.value.path === `/user/${userStore.userData.id}`) {
-    // Если уже на этой странице, эмулируем перезагрузку
     window.location.reload();
   } else {
     router.push(`/user/${userStore.userData.id}`);
@@ -74,12 +102,21 @@ const logout = () => {
   closeMenu();
 };
 
-// Закрытие меню при клике вне его области
 const handleClickOutside = (event) => {
   if (!event.target.closest('.profileMenu')) {
     closeMenu();
   }
 };
+
+
+watch(
+  () => route.path,
+  (newPath) => {
+    const currentTab = tabs.find(tab => newPath.startsWith(tab.route));
+    activeTab.value = currentTab ? currentTab.name : null;
+  },
+  { immediate: true } // Вызывается сразу при загрузке
+);
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
@@ -98,6 +135,7 @@ onUnmounted(() => {
   height: 120px;
   padding: 10px;
   position: relative;
+  justify-content: space-between;
 }
 
 img {
@@ -112,20 +150,46 @@ img {
   font-weight: bold;
 }
 
+.logoBlock{
+  display: flex;
+}
+
 .portalName {
   opacity: 50%;
   font-size: 15px;
 }
 
+
+.tabs {
+  display: flex;
+  margin-left: 50px;
+  gap: 110px;
+  align-items: center;
+}
+
+.tab {
+  padding: 10px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #000000;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  font-size: 22px;
+}
+
+.tab:hover {
+  background-color: #f0f0f0;
+}
+
+.tab.active {
+
+  border-bottom: 3px solid #5662DE;
+}
+
 .profileMenu {
   width: 350px;
-  margin-top: 20px;
-  margin-right: 10px;
   font-size: 20px;
   font-weight: bold;
-  position: fixed;
-  right: 0px;
-  top: 0;
   display: flex;
   cursor: pointer;
   z-index: 1000;

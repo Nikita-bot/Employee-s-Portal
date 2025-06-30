@@ -84,12 +84,31 @@ func (u userRepo) GetUserByLogin(login string) (entity.User, error) {
 	user.Department = department
 	boss := u.GetUserBoss(user.ID)
 	user.Boss = boss
+	roles := u.GetUserRoles(user.ID)
+	user.Roles = roles
 
 	if data, err := json.Marshal(user); err == nil {
 		u.r.Set(context.Background(), cacheKey, data, time.Hour)
 	}
 
 	return user, nil
+}
+
+func (u userRepo) GetUserRoles(id int) []entity.Role {
+	var r []entity.Role
+
+	query := `
+		SELECT r.id, r.name FROM roles r
+		JOIN user_role ur ON ur.role_id=r.id
+		WHERE ur.user_id=$1
+	`
+
+	err := u.db.Select(&r, query, id)
+	if err != nil {
+		return []entity.Role{}
+	}
+
+	return r
 }
 
 func (u userRepo) GetDepartmentByUserID(id int) entity.Department {

@@ -16,6 +16,7 @@ type Handler struct {
 	DepartmentHandler DepartmentHandler
 	CommentHandler    CommentHandler
 	JournalHandler    JournalHandler
+	NewsHandler       NewsHandler
 }
 
 func NewHandler(l *zap.Logger, s service.Service, e *echo.Echo) *Handler {
@@ -28,6 +29,7 @@ func NewHandler(l *zap.Logger, s service.Service, e *echo.Echo) *Handler {
 		DepartmentHandler: NewDepartmentHandler(s.DepartmentService, l, e),
 		CommentHandler:    NewCommentHandler(s.CommentService, l, e),
 		JournalHandler:    NewJournalHandler(s.JournalService, l, e),
+		NewsHandler:       NewNewsHandler(s.NewsService, l, e),
 	}
 }
 
@@ -40,6 +42,7 @@ func (h *Handler) Handle(port string) error {
 	h.DepartmentHandler.Handle()
 	h.CommentHandler.Handle()
 	h.JournalHandler.Handle()
+	h.NewsHandler.Handle()
 
 	err := h.e.Start(":" + port)
 	if err != nil {

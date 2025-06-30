@@ -7,6 +7,7 @@ import CalendarPage from '@/views/CalendarPage.vue'
 import KnowledgePage from '@/views/KnowledgePage.vue'
 import AnalyticsPage from '@/views/AnalyticsPage.vue'
 import UserPage from '@/views/UserPage.vue'
+import NewsPage from '@/views/NewsPage.vue'
 
 // Определяем маршруты
 const routes = [
@@ -18,6 +19,11 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: LoginPage
+  },
+  {
+    path: '/news',
+    name: 'News',
+    component: NewsPage
   },
   {
     path: '/tasks',
