@@ -39,6 +39,8 @@ services:
       - ${HTTP_BACKEND_PORT:-8080}:${HTTP_BACKEND_DOCKER_PORT:-8080}
     depends_on:
       - portal_database
+    volumes:
+      - ./backend/log:/app/log
     networks:
       - portal_network
 
