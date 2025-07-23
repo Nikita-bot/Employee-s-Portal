@@ -1,12 +1,12 @@
 <template>
   <div class="news-page">
     <div class="news-header">
-      <!-- <button v-if="hasAdminRole" class="add-news-btn" @click="createNews">
-        + Добавить новость
-      </button> -->
-      <button class="add-news-btn" @click="createNews">
+      <button v-if="hasAdminRole" class="add-news-btn" @click="createNews">
         + Добавить новость
       </button>
+      <!-- <button class="add-news-btn" @click="createNews">
+        + Добавить новость
+      </button> -->
     </div>
     <div class="news-list-container">
       <div class="news-list">
@@ -30,8 +30,7 @@ const newsList = ref([]);
 
 
 const hasAdminRole = computed(() => {
-  console.log(userStore.userData.roles)
-  return userStore.userData?.roles?.includes('admin');
+  return userStore.userData?.roles?.some(role => role.name === 'admin');
 });
 
 

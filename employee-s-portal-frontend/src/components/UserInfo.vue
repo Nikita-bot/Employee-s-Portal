@@ -168,7 +168,7 @@ const fetchUserData = async () =>{
     const data = await response.json();
     if (data.user) {
       userStore.setUserData(JSON.parse(JSON.stringify(data.user)));
-
+      console.log(data.user)
       updateUserData(`${data.user.surname} ${data.user.name} ${data.user.patronymic}`, data.user.position,data.user.department?.name,data.user.employment_date,data.user.email,data.user.phone
         ,data.user.tg_link, data.user.boss
       )

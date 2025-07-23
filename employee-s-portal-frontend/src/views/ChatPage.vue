@@ -4,7 +4,7 @@
         <div class="container">
             <SideMenu />
             <div>
-                Knowledge
+                Chat
             </div>
         </div>
     </div>    
@@ -13,5 +13,4 @@
 <script setup>
     import HeaderComponent from '@/components/HadderComponent.vue';
     import SideMenu from '@/components/SideMenu.vue';
-    import TaskGrid from '@/components/TaskGrid.vue';
 </script>

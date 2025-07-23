@@ -256,7 +256,7 @@ func (u userTaskRepo) DeleteTask(id int) error {
 	_, err := u.db.Exec(query, id)
 	if err != nil {
 		u.l.Error(err.Error())
-		return errors.New("Can't delete Task")
+		return errors.New("can't delete Task")
 	}
 
 	loc := time.FixedZone("UTC+7", 7*60*60)

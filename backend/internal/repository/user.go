@@ -95,6 +95,7 @@ func (u userRepo) GetUserByLogin(login string) (entity.User, error) {
 }
 
 func (u userRepo) GetUserRoles(id int) []entity.Role {
+	u.l.Debug("IN USER REPO :: GET USER ROLES " + string(id))
 	var r []entity.Role
 
 	query := `
@@ -160,6 +161,8 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 	user.Department = department
 	boss := u.GetUserBoss(user.ID)
 	user.Boss = boss
+	roles := u.GetUserRoles(user.ID)
+	user.Roles = roles
 
 	if data, err := json.Marshal(user); err == nil {
 		u.r.Set(context.Background(), cacheKey, data, time.Hour) // TTL 1 час

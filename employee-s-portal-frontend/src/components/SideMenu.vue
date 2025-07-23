@@ -13,21 +13,34 @@
 </template>
 
 <script setup>
-  import { ref, computed, watch } from 'vue';
+  import { ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
+  import { useUserStore } from '@/stores/user';
 
   const route = useRoute();
   const router = useRouter();
+  const userStore = useUserStore();
 
-  const menuItems = ref([
-    { name: 'tasks', title: 'Задачи', route: '/tasks' },
-    { name: 'edo', title: 'ЭДО', route: '/edo' },
-    { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
-    { name: 'analytics', title: 'Аналитика', route: '/analytics' },
-    { name: 'calendar', title: 'Календарь', route: '/calendar' },
-    { name: 'portals', title: 'Порталы', route: '/potals' },
-    { name: 'knowledge', title: 'База знаний', route: '/knowledge' }
-  ]);
+
+  const menuItems = ref(userStore.userData.department.name == "АСУ" ? 
+    [
+      { name: 'tasks', title: 'Задачи', route: '/tasks' },
+      { name: 'edo', title: 'ЭДО', route: '/edo' },
+      { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
+      { name: 'analytics', title: 'Аналитика', route: '/analytics' },
+      { name: 'calendar', title: 'Календарь', route: '/calendar' },
+      { name: 'portals', title: 'Порталы', route: '/potals' },
+      { name: 'knowledge', title: 'База знаний', route: '/knowledge' }
+    ]:
+    [
+      { name: 'tasks', title: 'Задачи', route: '/tasks' },
+      { name: 'edo', title: 'ЭДО', route: '/edo' },
+      { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
+      { name: 'analytics', title: 'Аналитика', route: '/analytics' },
+      { name: 'calendar', title: 'Календарь', route: '/calendar' },
+      { name: 'portals', title: 'Порталы', route: '/potals' },
+    ]
+  );
 
   const selectedItem = ref('');
 
@@ -45,15 +58,21 @@
   selectedItem.value = currentItem ? currentItem.name : '';
 };
 
-  // Инициализация при загрузке
+ 
   updateSelectedItem();
 
-  // Следим за изменениями маршрута
+  
   watch(() => route.path, updateSelectedItem);
 
   const selectMenuItem = (item) => {
-    router.push(item.route);
-    // selectedItem теперь обновляется автоматически через watch
+    if (item.name === 'knowledge') {
+      window.location.href = 'http://10.1.2.58:5031/view';
+    } else if (item.name === 'portals'){
+      window.location.href = 'http://portals.kkbsmp.ru/';
+    }
+    else {
+      router.push(item.route);
+    }
   };
 </script>
 

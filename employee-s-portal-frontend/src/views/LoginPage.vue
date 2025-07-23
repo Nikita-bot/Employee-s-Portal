@@ -84,7 +84,7 @@ const handleLogin = async () => {
     if (data.user) {
       userStore.setUserData(JSON.parse(JSON.stringify(data.user)));
       console.log('Сохранённые данные:', JSON.parse(JSON.stringify(userStore.userData)))
-      router.push('/user'); 
+      router.push(`/user/${data.user.id}`); 
     } else {
       throw new Error('Неверные учетные данные');
     }

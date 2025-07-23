@@ -4,10 +4,11 @@ import TaskPage from '@/views/TaskPage.vue'
 import EdoPage from '@/views/EdoPage.vue'
 import EcpPage from '@/views/EcpPage.vue'
 import CalendarPage from '@/views/CalendarPage.vue'
-import KnowledgePage from '@/views/KnowledgePage.vue'
 import AnalyticsPage from '@/views/AnalyticsPage.vue'
 import UserPage from '@/views/UserPage.vue'
 import NewsPage from '@/views/NewsPage.vue'
+import ChatPage from '@/views/ChatPage.vue'
+import SupportPage from '@/views/SupportPage.vue'
 
 // Определяем маршруты
 const routes = [
@@ -51,24 +52,18 @@ const routes = [
     component: CalendarPage
   },
   {
-    path: '/knowledge',
-    name: 'Knowledge',
-    component: KnowledgePage
-  },
-  {
     path: '/user/:id', 
     component: UserPage,
     props: true
   },
   {
-    path: '/potals', 
-    component: UserPage 
+    path: '/support',
+    component: SupportPage,
   },
   {
-    path: '/:pathMatch(.*)*', // Ловит любой несоответствующий маршрут
-    redirect: '/tasks' 
+    path: '/chat', 
+    component: ChatPage
   },
-  
   
 ]
 
