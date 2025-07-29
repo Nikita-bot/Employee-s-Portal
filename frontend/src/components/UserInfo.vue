@@ -4,19 +4,22 @@
     <div class="infoBlock">
       <img class="photoProfileMain" :src="logo" alt="Фото профиля">
       <div class="info">
-        <!-- Статичные метки -->
-        <div class="infoName">
-          <p class="elInfo">ФИО:</p>
-          <p class="elInfo">Должность:</p>
-          <p class="elInfo">Отделение:</p>
-          <p class="elInfo">Работает с:</p>
+        <!-- Объединенные блоки данных -->
+        <div class="infoItem">
+          <span class="label">ФИО:</span>
+          <span class="value">{{ userDataLocal.fullName || 'Не указан' }}</span>
         </div>
-        <!-- Динамические данные -->
-        <div class="infoData">
-          <p class="elData">{{ userDataLocal.fullName || 'Не указан' }}</p>
-          <p class="elData">{{ userDataLocal.position || 'Не указан' }}</p>
-          <p class="elData">{{ userDataLocal.department || 'Не указан' }}</p>
-          <p class="elData">{{ userDataLocal.employmentDate || 'Не указан' }}</p>
+        <div class="infoItem">
+          <span class="label">Должность:</span>
+          <span class="value">{{ userDataLocal.position || 'Не указан' }}</span>
+        </div>
+        <div class="infoItem">
+          <span class="label">Отделение:</span>
+          <span class="value">{{ userDataLocal.department || 'Не указан' }}</span>
+        </div>
+        <div class="infoItem">
+          <span class="label">Работает с:</span>
+          <span class="value">{{ userDataLocal.employmentDate || 'Не указан' }}</span>
         </div>
       </div>
     </div>
@@ -78,6 +81,7 @@
 <script setup>
 import { onMounted, ref  } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { useRoute } from 'vue-router'
 import logo from '@/assets/logo.png';
 
 const props = defineProps({
@@ -88,6 +92,7 @@ const props = defineProps({
 })
 
 const userStore = useUserStore();
+const route = useRoute()
 const isShowingBoss = ref(false);
 
 // Вычисляемые свойства для форматирования данных
@@ -96,6 +101,7 @@ const userDataLocal = ref({
   position: '',
   department: '',
   employmentDate: '',
+  other_position: [],
   contacts: {
     email: '',
     phone: '',
@@ -104,17 +110,18 @@ const userDataLocal = ref({
   }
 });
 
-const updateUserData = (fullName,position, department,employmentDate,email,phone,telegram,boss) => {
+const updateUserData = (fullName,position, department,employmentDate,email,phone,telegram,boss, other_position) => {
   userDataLocal.value = {
-    fullName: fullName,//`${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`,
-    position: position,//userStore.userData.position,
-    department: department || '',//userStore.userData.department?.name || '',
-    employmentDate: formatDate(employmentDate),//formatDate(userStore.userData.employment_date),
+    fullName: fullName,
+    position: position,
+    department: department || '',
+    employmentDate: formatDate(employmentDate),
+    other_position: other_position,
     contacts: {
-      email: email,//userStore.userData.email,
-      phone: phone,// userStore.userData.phone,
-      telegram:telegram,// userStore.userData.tg_link,
-      boss: boss//userStore.userData.boss
+      email: email,
+      phone: phone,
+      telegram:telegram,
+      boss: boss
     }
   };
 };
@@ -122,28 +129,29 @@ const updateUserData = (fullName,position, department,employmentDate,email,phone
 const returnToUser = () => {
     isShowingBoss.value = false;
     updateUserData(`${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`,
-      userStore.userData.position,
-      userStore.userData.department.name,
-      userStore.userData.employment_date,
+      userStore.userData.employee.position,
+      userStore.userData.employee.department,
+      userStore.userData.start_date,
       userStore.userData.email,
       userStore.userData.phone,
-      userStore.userData.telegram,
-      userStore.userData.boss
+      userStore.userData.tg_link,
+      userStore.userData.employee.boss,
+      userStore.userData.other_position
     )
 };
 
 const fetchBossData = async (bossId) => {
   try {
 
-    const response = await fetch(`http://localhost:8080/api/v1/user/${bossId}`);
+    const response = await fetch(`/api/v1/user/${bossId}`);
 
     if (!response.ok) throw new Error('Ошибка загрузки данных о пользователе');
 
     const data = await response.json();
     if (data.user) {
   
-      updateUserData(`${data.user.surname} ${data.user.name} ${data.user.patronymic}`, data.user.position,data.user.department?.name,data.user.employment_date,data.user.email,data.user.phone
-        ,data.user.tg_link, data.user.boss
+      updateUserData(`${data.user.surname} ${data.user.name} ${data.user.patronymic}`, data.user.employee.position, data.user.employee.department, data.user.employee.start_date,data.user.email,data.user.phone
+        ,data.user.tg_link, data.user.employee.boss.name, data.user.employee.other_position
       )
 
       isShowingBoss.value = true;
@@ -161,7 +169,7 @@ const fetchBossData = async (bossId) => {
 const fetchUserData = async () =>{
   try {
 
-    const response = await fetch(`http://localhost:8080/api/v1/user/${userStore.userData.id}`);
+    const response = await fetch(`/api/v1/user/${route.params.id}`);
 
     if (!response.ok) throw new Error('Ошибка загрузки данных о пользователе');
 
@@ -169,8 +177,8 @@ const fetchUserData = async () =>{
     if (data.user) {
       userStore.setUserData(JSON.parse(JSON.stringify(data.user)));
       console.log(data.user)
-      updateUserData(`${data.user.surname} ${data.user.name} ${data.user.patronymic}`, data.user.position,data.user.department?.name,data.user.employment_date,data.user.email,data.user.phone
-        ,data.user.tg_link, data.user.boss
+      updateUserData(`${data.user.surname} ${data.user.name} ${data.user.patronymic}`, data.user.employee.position, data.user.employee.department, data.user.employee.start_date,data.user.email,data.user.phone
+        ,data.user.tg_link, data.user.employee.boss.name, data.user.employee.other_position
       )
     } else {
       throw new Error('Ошибка загрузки данных о пользователе');
@@ -185,8 +193,7 @@ const fetchUserData = async () =>{
 // Функция для форматирования даты
 const formatDate = (dateString) => {
   if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('ru-RU');
+  return dateString;
 };
 
 const formatFullName = (surname, name, patronymic) => {
@@ -208,16 +215,28 @@ const formatBossName = (boss) => {
 };
 
 
-onMounted(() => {
-  fetchUserData()
-})
+onMounted(async () => {
+  if (!userStore.userData || Object.keys(userStore.userData).length === 0) {
+    try {
+      fetchUserData();
+      console.log('Данные пользователя успешно загружены');
+    } catch (error) {
+      console.error('Ошибка загрузки данных:', error);
+    }
+  } else {
+    console.log('Данные уже загружены');
+    updateUserData(`${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`, userStore.userData.employee.position, userStore.userData.employee.department, userStore.userData.employee.start_date,userStore.userData.email,userStore.userData.phone
+        ,userStore.userData.tg_link, userStore.userData.employee.boss.name, data.user.employee.other_position
+      )
+  }
+});
 
 </script>
 
 <style scoped>
         .mainBlock{
             background-color: #FFFFFF;
-            width: 1000px;
+            width: 60%;
             height: 70%;
             position: absolute;
             border-radius: 15px;
@@ -238,31 +257,30 @@ onMounted(() => {
             height: 300px;
         }
 
-        .info{
-            display: flex;
-            margin-left: 40px;
-        }
-        .infoName{
-            margin-right: 20px;
-            text-align: right;
+        .info {
+          margin-left: 40px;
         }
 
-        .elInfo{
-            margin-top: 15px;
-            color: #5662DE;
-            
+        .infoItem {
+          display: flex;
+          margin-top: 15px;
         }
 
-        .elInfo:not(:first-child){
-            margin-top: 30px;
+        .infoItem:not(:first-child) {
+          margin-top: 30px;
         }
 
-        .elData{
-            margin-top: 15px;
+        .label {
+          color: #5662DE;
+          width: 150px; /* Фиксированная ширина для выравнивания */
+          text-align: right;
+          margin-right: 50px;
+          flex-shrink: 0; /* Запрещаем сжатие метки */
         }
 
-        .elData:not(:first-child){
-            margin-top: 30px;
+        .value {
+          flex-grow: 1; /* Занимает все доступное пространство */
+          word-break: break-word; /* Перенос длинных значений */
         }
 
         .contactsBlock{
@@ -284,6 +302,23 @@ onMounted(() => {
 
         .contactsInfo{
             margin-right: 20px;
+        }
+         .elInfo{
+            margin-top: 15px;
+            color: #5662DE;
+            
+        }
+
+        .elInfo:not(:first-child){
+            margin-top: 30px;
+        }
+
+        .elData{
+            margin-top: 15px;
+        }
+
+        .elData:not(:first-child){
+            margin-top: 30px;
         }
 
         .line{

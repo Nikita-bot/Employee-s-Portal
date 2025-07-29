@@ -10,7 +10,7 @@
             <label for="issue-type">Тип проблемы</label>
             <select id="issue-type" v-model="selectedIssue" class="form-select">
               <option disabled value="">Выберите тип проблемы</option>
-              <option v-for="issue in issueTypes" :key="issue.id" :value="issue.id">
+              <option v-for="issue in supportTasks" :key="issue.id" :value="issue.id">
                 {{ issue.name }}
               </option>
             </select>
@@ -36,44 +36,74 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
+  import { useUserStore } from '@/stores/user';
 
-// Захардкоженные типы проблем
-const issueTypes = ref([
-  { id: 1, name: 'Проблема с авторизацией' },
-  { id: 2, name: 'Техническая ошибка в системе' },
-  { id: 3, name: 'Вопрос по функционалу' },
-  { id: 4, name: 'Другая проблема' }
-]);
+  const userStore = useUserStore();
 
-const selectedIssue = ref('');
-const issueDescription = ref('');
+  const selectedIssue = ref('');
+  const issueDescription = ref('');
+  const supportTasks = ref([]);
 
-const submitIssue = () => {
-  if (!selectedIssue.value) {
-    alert('Пожалуйста, выберите тип проблемы');
-    return;
-  }
-  
-  if (!issueDescription.value.trim()) {
-    alert('Пожалуйста, опишите вашу проблему');
-    return;
-  }
-  
-  // Здесь будет логика отправки запроса
-  const issueData = {
-    type: issueTypes.value.find(issue => issue.id === selectedIssue.value).name,
-    description: issueDescription.value,
-    date: new Date().toLocaleString()
+  const fetchSupportTasks = async () => {
+    try {
+      const response = await fetch('/api/v1/tasks/support');
+      if (!response.ok) throw new Error('Ошибка получения задач');
+      supportTasks.value = (await response.json()).task_list || [];
+    } catch (error) {
+      console.error('Ошибка при получении задач:', error);
+      alert('Не удалось загрузить задачи поддержки');
+    }
   };
-  
-  console.log('Отправка запроса:', issueData);
-  alert('Ваш запрос отправлен в техническую поддержку');
-  
-  // Сброс формы
-  selectedIssue.value = '';
-  issueDescription.value = '';
-};
+
+  const createSupportTask = async () => {
+    if (!selectedIssue.value) {
+      alert('Пожалуйста, выберите тип проблемы');
+      return;
+    }
+    
+    if (!issueDescription.value.trim()) {
+      alert('Пожалуйста, опишите вашу проблему');
+      return;
+    }
+    
+    try {
+      const taskToCreate = {
+        task_id: selectedIssue.value,
+        initiator: userStore.userData.id,
+        description: issueDescription.value,
+        status: 0, 
+        create_date: new Date().toISOString().split('T')[0] 
+      };
+      
+      const response = await fetch('/api/v1/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskToCreate)
+      });
+      
+      if (!response.ok) throw new Error('Ошибка создания задачи');
+      
+      await fetchSupportTasks();
+      alert('Ваш запрос отправлен в техническую поддержку');
+      
+      selectedIssue.value = '';
+      issueDescription.value = '';
+    } catch (error) {
+      console.error('Ошибка создания задачи:', error);
+      alert('Не удалось отправить запрос в поддержку');
+    }
+  };
+
+  const submitIssue = () => {
+    createSupportTask();
+  };
+
+  onMounted(() => {
+    fetchSupportTasks();
+  });
 </script>
 
 <style scoped>

@@ -25,14 +25,15 @@ func NewDepartmentRepo(db *sqlx.DB, l *zap.Logger) DepartmentRepository {
 }
 
 func (dr departmentRepo) GetUserOnDepartmentByTaskID(task_id int) ([]entity.User, error) {
-	dr.l.Debug("IR DEPARTMENT REPO :: GET USERS ON DEPARTMENT")
+	dr.l.Debug("IN DEPARTMENT REPO :: GET USERS ON DEPARTMENT")
 
 	var u []entity.User
 
 	query := `
-		SELECT u.id, u.name, u.surname, u.patronymic, u.position 
+		SELECT u.id, u.name, u.surname, u.patronymic
 		FROM users u
-		JOIN task_department td ON u.department_id = td.department_id
+		JOIN employee e ON e.user_id = u.id
+		JOIN task_department td ON e.depart_id = td.department_id
 		JOIN user_task ut ON ut.task_id = td.task_id
 		WHERE ut.id = $1
 	`

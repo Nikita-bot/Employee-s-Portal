@@ -153,7 +153,8 @@ func (u userTaskRepo) GetUserAndCountTasksByDepID(id int) ([]entity.UserCountTas
 		SELECT u.id as user_id, COUNT(ut.id) as task_count
 		FROM users u
 		LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
-		WHERE u.department_id = $1
+		JOIN employee e ON u.id = e.user_id
+		WHERE e.depart_id = $1
 		GROUP BY u.id
 	`
 
@@ -217,7 +218,6 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
             exec.name AS "executor.name",
             exec.surname AS "executor.surname",
             exec.patronymic AS "executor.patronymic",
-			d.name AS "executor.department",
             -- Данные инициатора
             init.id AS "initiator.id",
             init.name AS "initiator.name",
@@ -229,7 +229,6 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
             users exec ON ut.executor = exec.id
         JOIN 
             users init ON ut.initiator = init.id
-		JOIN departments d on d.id = exec.department_id
         WHERE 
             ut.id = $1 
             AND ut.status != 3

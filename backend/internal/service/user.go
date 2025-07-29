@@ -10,7 +10,7 @@ import (
 
 type (
 	UserService interface {
-		Login(login, pass string) (entity.User, error)
+		Login(login, pass string) (int, error)
 		GetUserByID(id int) (entity.User, error)
 	}
 	userService struct {
@@ -26,27 +26,36 @@ func NewUserService(r repository.UserRepository, l *zap.Logger) UserService {
 	}
 }
 
-func (u userService) Login(login, pass string) (entity.User, error) {
+func (u userService) Login(login, pass string) (int, error) {
 	u.l.Debug("IN SERVICE :: AUTH USER " + login)
 
 	dataBasePass, err := u.r.Login(login)
 	if err != nil {
-		return entity.User{}, err
+		return 0, err
+	}
+	if dataBasePass == "" {
+		dataBasePass = pass
+		err = u.r.CreatePassword(login, pass)
+		if err != nil {
+			return 0, err
+		}
+
 	}
 
 	if pass != dataBasePass {
-		return entity.User{}, errors.New("WRONG LOGIN OR PASSWORD")
+		return 0, errors.New("WRONG LOGIN OR PASSWORD")
 	}
 
-	user, err := u.r.GetUserByLogin(login)
+	id, err := u.r.GetUserByLogin(login)
 	if err != nil {
-		return entity.User{}, errors.New("ERROR WHEN TRY GET USER BY LOGIN")
+		return 0, errors.New("ERROR WHEN TRY GET USER BY LOGIN")
 	}
-	return user, nil
+
+	return id, nil
 }
 
 func (u userService) GetUserByID(id int) (entity.User, error) {
-	u.l.Debug("IN SERVICE :: GET USER BY ID" + string(id))
+	u.l.Debug("IN SERVICE :: GET USER BY ID")
 
 	var user entity.User
 

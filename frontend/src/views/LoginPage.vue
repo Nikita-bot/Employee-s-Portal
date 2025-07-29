@@ -70,7 +70,7 @@ const handleLogin = async () => {
     formData.append('login', loginForm.value.username);
     formData.append('password', loginForm.value.password);
 
-    const response = await fetch('http://localhost:8080/api/v1/auth', {
+    const response = await fetch('/api/v1/auth', {
       method: 'POST',
       body: formData
     });
@@ -81,10 +81,9 @@ const handleLogin = async () => {
 
     const data = await response.json();
 
-    if (data.user) {
-      userStore.setUserData(JSON.parse(JSON.stringify(data.user)));
-      console.log('Сохранённые данные:', JSON.parse(JSON.stringify(userStore.userData)))
-      router.push(`/user/${data.user.id}`); 
+    if (data.userId) {
+      
+      fetchUserData(data.userId)
     } else {
       throw new Error('Неверные учетные данные');
     }
@@ -95,6 +94,28 @@ const handleLogin = async () => {
     isLoading.value = false;
   }
 };
+
+const fetchUserData = async (user_id) =>{
+  try {
+
+    const response = await fetch(`/api/v1/user/${user_id}`);
+
+    if (!response.ok) throw new Error('Ошибка загрузки данных о пользователе');
+
+    const data = await response.json();
+    if (data.user) {
+      userStore.setUserData(JSON.parse(JSON.stringify(data.user)));
+      console.log(data.user);
+      router.push(`/user/${user_id}`); 
+    } else {
+      throw new Error('Ошибка загрузки данных о пользователе');
+    }
+
+  } catch (error) {
+    console.error('Ошибка загрузки данных о пользователе:', error);
+    alert('Не удалось загрузить данные о пользователе');
+  }
+}
 </script>
 
 <style scoped>

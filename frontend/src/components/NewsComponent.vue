@@ -18,12 +18,20 @@
         </div>
       </div>
     </div>
+    <CreateNewsModal 
+      :isOpen="isCreateModalOpen" 
+      @close="isCreateModalOpen = false"
+      @created="fetchNews"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/stores/user';
+import CreateNewsModal from '@/components/CreateNewsModal.vue';
+
+const isCreateModalOpen = ref(false);
 
 const userStore = useUserStore();
 const newsList = ref([]);
@@ -36,7 +44,7 @@ const hasAdminRole = computed(() => {
 
 const fetchNews = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/v1/news');
+    const response = await fetch('/api/v1/news');
     if (!response.ok) throw new Error('Ошибка загрузки новостей');
     const data = await response.json();
     newsList.value = data.news;
@@ -48,30 +56,7 @@ const fetchNews = async () => {
 
 
 const createNews = async () => {
-  const newNews = {
-    title: 'Новая новость',
-    content: 'Содержание новости',
-    author: userStore.userData.id,
-    date: new Date().toLocaleString()
-  };
-
-  try {
-    const response = await fetch('http://localhost:8080/api/v1/news', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newNews)
-    });
-
-    if (!response.ok) throw new Error('Ошибка создания новости');
-    
-    fetchNews()
-    alert('Новость успешно создана');
-  } catch (error) {
-    console.error('Ошибка при создании новости:', error);
-    alert('Не удалось создать новость');
-  }
+  isCreateModalOpen.value = true;
 };
 
 const formatDate = (dateString) => {

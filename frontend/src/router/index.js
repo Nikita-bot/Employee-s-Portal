@@ -54,7 +54,10 @@ const routes = [
   {
     path: '/user/:id', 
     component: UserPage,
-    props: true
+    beforeEnter: (to, from, next) => {
+      const userId = to.params.id
+      next()
+    }
   },
   {
     path: '/support',

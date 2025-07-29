@@ -18,14 +18,27 @@ services:
       - portal_network
     
 
-  redis_portal:
+  portal_redis:
     image: "redis:alpine"
-    container_name: redis_portal
+    container_name: portal_redis
     ports:
       - ${REDIS_PORT}:${REDIS_DOCKER_PORT}
     networks:
       - portal_network
 
+  portal_nginx:
+    container_name: portal_nginx
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - ${NGINX_HTTP_PORT:-8000}:80
+    depends_on:
+      - portal_backend
+      - portal_frontend
+    restart: always
+    networks:
+      - portal_network
 
   portal_backend:
     container_name: portal_backend
@@ -39,11 +52,27 @@ services:
       - ${HTTP_BACKEND_PORT:-8080}:${HTTP_BACKEND_DOCKER_PORT:-8080}
     depends_on:
       - portal_database
-      - redis_portal
+      - portal_redis
     volumes:
       - ./backend/log:/app/log
     networks:
       - portal_network
+  
+  portal_frontend:
+    container_name: portal_frontend
+    env_file:
+      - .env
+    restart: always
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports: 
+      - ${HTTP_FRONT_PORT:-3000}:${HTTP_FRONT_DOCKER_PORT:-3000}
+    depends_on:
+      - portal_backend
+    networks:
+      - portal_network
+
 
 volumes:
   portal_db_data:

@@ -22,7 +22,7 @@
   const userStore = useUserStore();
 
 
-  const menuItems = ref(userStore.userData.department.name == "АСУ" ? 
+  const menuItems = ref(userStore.userData.employee.department == "отдел автоматизированных систем управления" ? 
     [
       { name: 'tasks', title: 'Задачи', route: '/tasks' },
       { name: 'edo', title: 'ЭДО', route: '/edo' },
@@ -66,7 +66,7 @@
 
   const selectMenuItem = (item) => {
     if (item.name === 'knowledge') {
-      window.location.href = 'http://10.1.2.58:5031/view';
+      window.location.href = 'http://documents.kkbsmp.ru/view/list';
     } else if (item.name === 'portals'){
       window.location.href = 'http://portals.kkbsmp.ru/';
     }

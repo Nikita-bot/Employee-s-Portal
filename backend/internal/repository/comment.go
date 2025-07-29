@@ -26,7 +26,7 @@ func NewCommentRepo(db *sqlx.DB, l *zap.Logger) CommetRepository {
 }
 
 func (cr commentRepo) GetComments(taskId int) ([]entity.Comment, error) {
-	cr.l.Info("IN COMMENT REPO :: GET ALL COMMENTS FOR TASK " + string(taskId))
+	cr.l.Info("IN COMMENT REPO :: GET ALL COMMENTS FOR TASK ")
 
 	var c []entity.Comment
 

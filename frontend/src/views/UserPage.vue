@@ -2,8 +2,8 @@
     <div id="app">
         <HeaderComponent />
         <div class="container">
-            <SideMenu />
             <UserInfo/>
+            <SideMenu />
         </div>
     </div>    
 </template>

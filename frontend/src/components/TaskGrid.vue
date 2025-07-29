@@ -212,7 +212,7 @@ const sortBy = (field) => {
 const fetchTasks = async () => {
   isLoading.value = true;
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/tasks/user/${userStore.userData.id}`);
+    const response = await fetch(`/api/v1/tasks/user/${userStore.userData.id}`);
     if (!response.ok) throw new Error('Ошибка загрузки задач');
     
     const data = await response.json();
@@ -242,7 +242,7 @@ const fetchTasks = async () => {
 
 const fetchTaskTypes = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/v1/taskList');
+    const response = await fetch('/api/v1/taskList');
     if (!response.ok) throw new Error('Ошибка загрузки типов задач');
     taskTypes.value = (await response.json()).task_list || [];
   } catch (error) {
@@ -265,7 +265,7 @@ const fetchTaskTypes = async () => {
 const openTaskModal = async (task) => {
   isLoading.value = true;
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/tasks/${task.id}`);
+    const response = await fetch(`/api/v1/tasks/${task.id}`);
     if (!response.ok) throw new Error('Ошибка загрузки задачи');
     
     const fullTask = (await response.json()).task;
@@ -311,7 +311,7 @@ const handleDeleteTask = async () => {
   if (!selectedTask.value) return;
   
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/tasks/${selectedTask.value.id}`, {
+    const response = await fetch(`/api/v1/tasks/${selectedTask.value.id}`, {
       method: 'DELETE'
     });
     
@@ -330,7 +330,7 @@ const handleCompleteTask = async () => {
   if (!selectedTask.value) return;
   
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/tasks/${selectedTask.value.id}`, {
+    const response = await fetch(`/api/v1/tasks/${selectedTask.value.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -350,7 +350,7 @@ const handleCompleteTask = async () => {
 
 const fetchComments = async (id) =>{
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/comments/${id}`);
+    const response = await fetch(`/api/v1/comments/${id}`);
     if (!response.ok) throw new Error('Ошибка загрузки комментариев задач');
     const data = await response.json();
     return data.comments || [];
@@ -383,7 +383,7 @@ const handleAddComment = async (commentText) => {
     }
 
     
-    const response = await fetch('http://localhost:8080/api/v1/comments', {
+    const response = await fetch('/api/v1/comments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -434,7 +434,7 @@ const handleCreateTask = async ({ task }) => {
       initiator: userStore.userData.id,
     };
     
-    const response = await fetch('http://localhost:8080/api/v1/tasks', {
+    const response = await fetch('/api/v1/tasks', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

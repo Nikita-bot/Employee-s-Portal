@@ -41,7 +41,6 @@
               Сменить исполнителя
             </button>
           </p>
-          <p><strong>Отделение:</strong>{{ task.executor.department }}</p>
           <p><strong>Описание:</strong> {{ task.description }}</p>
           <p><strong>Статус:</strong> {{ task.status }}</p>
           <p><strong>Дата создания:</strong> {{task.create_date }}</p>
@@ -169,7 +168,7 @@ const formatDate = (dateString) => {
 const fetchJournal = async () => {
   try {
     journalLoading.value = true;
-    const response = await fetch(`http://localhost:8080/api/v1/journal/${props.task.id}`);
+    const response = await fetch(`/api/v1/journal/${props.task.id}`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -186,7 +185,7 @@ const fetchJournal = async () => {
 
 const changeExecutor = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/tasks/executor/${props.task.id}`, {
+    const response = await fetch(`/api/v1/tasks/executor/${props.task.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -221,7 +220,7 @@ const addComment = () => {
 const fetchDepartmentUsers = async () => {
   try {
     console.log(props.task.id)
-    const response = await fetch(`http://localhost:8080/api/v1/depatments/user/${props.task.id}`);
+    const response = await fetch(`/api/v1/depatments/user/${props.task.id}`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
