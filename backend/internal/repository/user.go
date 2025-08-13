@@ -216,7 +216,7 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 	user.Employee.OtherPosition = append(user.Employee.OtherPosition, positions...)
 
 	if data, err := json.Marshal(user); err == nil {
-		u.r.Set(context.Background(), cacheKey, data, time.Hour) // TTL 1 час
+		u.r.Set(context.Background(), cacheKey, data, time.Hour)
 	}
 
 	return user, nil
@@ -249,6 +249,7 @@ func (r userRepo) GetAllUserPosition(userID int) []entity.Position {
 	FROM employee e 
 	JOIN departments d ON e.depart_id = d.id
 	WHERE e.user_id = $1
+	AND (e.zanyatost != 'Основное место работы' OR e.zanyatost != 'Внешнее совместительство') 
 	`
 	err := r.db.Select(&pos, query, userID)
 	if err != nil {

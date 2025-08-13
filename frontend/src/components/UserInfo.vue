@@ -11,7 +11,20 @@
         </div>
         <div class="infoItem">
           <span class="label">Должность:</span>
-          <span class="value">{{ userDataLocal.position || 'Не указан' }}</span>
+          <span class="value">
+            {{ userDataLocal.position || 'Не указан' }}
+            <span v-if="userDataLocal.other_position?.length" 
+              class="position-info-icon" 
+              @mouseover="showTooltip = true"
+              @mouseleave="showTooltip = false">
+              <i class="bi bi-info-circle"></i>
+              <div v-if="showTooltip" class="position-tooltip">
+                <div v-for="(pos, index) in userDataLocal.other_position" :key="index" class="position-item">
+                  <strong>{{ pos.department }}:</strong> {{ pos.name }}
+                </div>
+              </div>
+            </span>
+          </span>
         </div>
         <div class="infoItem">
           <span class="label">Отделение:</span>
@@ -79,6 +92,7 @@
 </template>
 
 <script setup>
+import "bootstrap-icons/font/bootstrap-icons.css";
 import { onMounted, ref  } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { useRoute } from 'vue-router'
@@ -94,6 +108,7 @@ const props = defineProps({
 const userStore = useUserStore();
 const route = useRoute()
 const isShowingBoss = ref(false);
+const showTooltip = ref(false);
 
 // Вычисляемые свойства для форматирования данных
 const userDataLocal = ref({
@@ -226,7 +241,7 @@ onMounted(async () => {
   } else {
     console.log('Данные уже загружены');
     updateUserData(`${userStore.userData.surname} ${userStore.userData.name} ${userStore.userData.patronymic}`, userStore.userData.employee.position, userStore.userData.employee.department, userStore.userData.employee.start_date,userStore.userData.email,userStore.userData.phone
-        ,userStore.userData.tg_link, userStore.userData.employee.boss.name, data.user.employee.other_position
+        ,userStore.userData.tg_link, userStore.userData.employee.boss.name, userStore.userData.employee.other_position
       )
   }
 });
@@ -349,5 +364,45 @@ onMounted(async () => {
 
         .return-button:hover {
           background-color: #454fa7;
+        }
+
+        .position-info-icon {
+          position: relative;
+          display: inline-block;
+          margin-left: 5px;
+          cursor: help;
+          color: #3498db;
+        }
+
+        .position-tooltip {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          z-index: 100;
+          min-width: 250px;
+          font-size: 14px;
+        }
+
+        .position-item {
+          padding: 5px 0;
+          border-bottom: 1px solid #eee;
+        }
+
+        .position-item:last-child {
+          border-bottom: none;
+        }
+
+        .position-info-icon .bi {
+          transition: all 0.2s;
+        }
+
+        .position-info-icon:hover .bi {
+          color: #2980b9;
         }
 </style>
