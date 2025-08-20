@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"portal/internal/service"
 	"strconv"
 
@@ -30,6 +31,34 @@ func NewUserHandler(s service.UserService, l *zap.Logger, e *echo.Echo) UserHand
 func (uh userHandler) Handle() {
 	uh.e.POST("/api/v1/auth", uh.Auth)
 	uh.e.GET("/api/v1/user/:id", uh.GetUserByID)
+	uh.e.PATCH("/api/v1/user/pass", uh.PatchEvent)
+}
+
+func (uh userHandler) PatchEvent(c echo.Context) error {
+	uh.l.Info("IN USER HANDLER :: CHANGE PASSWORD")
+	type PasswordChangeRequest struct {
+		ID   int    `json:"id" form:"id"`
+		Pass string `json:"pass" form:"pass"`
+	}
+
+	var req PasswordChangeRequest
+
+	if err := c.Bind(&req); err != nil {
+		uh.l.Debug("Request: ", zap.Any("req:", req))
+		return c.JSON(http.StatusBadRequest, "invalid request body")
+	}
+
+	uh.l.Debug("Request: ", zap.Any("req:", req))
+
+	if req.ID == 0 || req.Pass == "" {
+		return c.JSON(http.StatusBadRequest, "one of parameters is null")
+	}
+
+	err := uh.s.ChangePassword(req.ID, req.Pass)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "failed to change password")
+	}
+	return c.JSON(http.StatusOK, "Ok")
 }
 
 func (uh userHandler) Auth(c echo.Context) error {

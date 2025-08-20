@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"portal/internal/entity"
 	"portal/internal/service"
 	"strconv"
@@ -31,11 +32,11 @@ func NewUserTaskHandler(s service.UserTaskService, l *zap.Logger, e *echo.Echo) 
 
 func (uh userTaskHandler) Handle() {
 	uh.e.GET("/api/v1/tasks/user/:userId", uh.getAllUserTask)
-	uh.e.POST("/api/v1/tasks", uh.postUserTask)
 	uh.e.GET("/api/v1/tasks/:id", uh.getUserTaskByID)
+	uh.e.POST("/api/v1/tasks", uh.postUserTask)
 	uh.e.PATCH("/api/v1/tasks/:id", uh.patchUserTask)
-	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask)
 	uh.e.PATCH("/api/v1/tasks/executor/:id", uh.patchExecutorToTask)
+	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask)
 }
 
 func (uh userTaskHandler) patchExecutorToTask(c echo.Context) error {
@@ -144,16 +145,30 @@ func (uh *userTaskHandler) deleteUserTask(c echo.Context) error {
 func (uh *userTaskHandler) patchUserTask(c echo.Context) error {
 	uh.l.Info("IH USER TASK HANDLER :: UPDATE TASK")
 
+	resp := struct {
+		ID     int `json:"id"`
+		Status int `json:"status" form:"status"`
+	}{}
+
 	// Получаем ID задачи из URL
 	taskID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.String(400, "Task ID is required")
 	}
 
-	now := time.Now()
-	execDate := now.Format("2006-01-02")
+	err = c.Bind(&resp)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Bad status is required")
+	}
 
-	err = uh.s.ExecTask(taskID, execDate)
+	execDate := ""
+
+	if resp.Status == 2 {
+		now := time.Now()
+		execDate = now.Format("2006-01-02")
+	}
+
+	err = uh.s.ExecTask(taskID, resp.Status, execDate)
 	if err != nil {
 		return c.String(500, err.Error())
 	}

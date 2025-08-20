@@ -25,19 +25,19 @@
   const menuItems = ref(userStore.userData.employee.department == "отдел автоматизированных систем управления" ? 
     [
       { name: 'tasks', title: 'Задачи', route: '/tasks' },
-      { name: 'edo', title: 'ЭДО', route: '/edo' },
-      { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
-      { name: 'analytics', title: 'Аналитика', route: '/analytics' },
-      { name: 'calendar', title: 'Календарь', route: '/calendar' },
+      // { name: 'edo', title: 'ЭДО', route: '/edo' },
+      // { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
+      // { name: 'analytics', title: 'Аналитика', route: '/analytics' },
+      // { name: 'calendar', title: 'Календарь', route: '/calendar' },
       { name: 'portals', title: 'Порталы', route: '/potals' },
       { name: 'knowledge', title: 'База знаний', route: '/knowledge' }
     ]:
     [
       { name: 'tasks', title: 'Задачи', route: '/tasks' },
-      { name: 'edo', title: 'ЭДО', route: '/edo' },
-      { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
-      { name: 'analytics', title: 'Аналитика', route: '/analytics' },
-      { name: 'calendar', title: 'Календарь', route: '/calendar' },
+      // { name: 'edo', title: 'ЭДО', route: '/edo' },
+      // { name: 'ecp', title: 'ЭЦП', route: '/ecp' },
+      // { name: 'analytics', title: 'Аналитика', route: '/analytics' },
+      // { name: 'calendar', title: 'Календарь', route: '/calendar' },
       { name: 'portals', title: 'Порталы', route: '/potals' },
     ]
   );
@@ -69,6 +69,8 @@
       window.location.href = 'http://documents.kkbsmp.ru/view/list';
     } else if (item.name === 'portals'){
       window.location.href = 'http://portals.kkbsmp.ru/';
+    } else if (item.name == 'edo'){
+      window.location.href = 'http://edo.bsmp42.ru/index.php'
     }
     else {
       router.push(item.route);

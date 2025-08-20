@@ -27,7 +27,6 @@
     </div>
     
     <div class="task-grid">
-      <!-- Заголовки таблицы -->
       <div 
         class="grid-header sortable"
         @click="sortBy('id')"
@@ -86,7 +85,6 @@
         </span>
       </div>
 
-      <!-- Строки с задачами -->
       <template v-for="task in displayedTasks" :key="task.id">
         <div 
           class="grid-item clickable"
@@ -135,18 +133,11 @@
       @close="closeTaskModal"
       @delete="handleDeleteTask"
       @complete="handleCompleteTask"
+      @take="handleTakeInWork"
       @add-comment="handleAddComment"
       @refresh-tasks="fetchTasks"
     />
 
-    <!-- <CreateTaskModal
-      v-if="isCreateModalOpen"
-      :task-types="taskTypes"
-      :department-users="departmentUsers"
-      @close="closeCreateModal"
-      @save="handleCreateTask"
-      @task-type-changed="handleTaskTypeChange"
-    /> -->
     <CreateTaskModal
       v-if="isCreateModalOpen"
       :task-types="taskTypes"
@@ -164,7 +155,6 @@ import CreateTaskModal from './CreateTaskModal.vue';
 
 const userStore = useUserStore();
 
-// Состояния
 const activeTab = ref('assigned');
 const selectedTask = ref(null);
 const sortField = ref('');
@@ -173,13 +163,11 @@ const isTaskModalOpen = ref(false);
 const isCreateModalOpen = ref(false);
 const isLoading = ref(false);
 
-// Данные
 const tasks = ref({
   assigned: [],
   created: []
 });
 const taskTypes = ref([]);
-// const departmentUsers = ref([]);
 
 const displayedTasks = computed(() => {
   const taskList = activeTab.value === 'assigned' 
@@ -251,60 +239,43 @@ const fetchTaskTypes = async () => {
   }
 };
 
-// const fetchDepartmentUsers = async (departmentId) => {
-//   try {
-//     const response = await fetch(`http://localhost:8080/api/v1/depatments/user/${departmentId}`);
-//     if (!response.ok) throw new Error('Ошибка загрузки пользователей отдела');
-//     departmentUsers.value = (await response.json()).users || [];
-//   } catch (error) {
-//     console.error('Ошибка загрузки пользователей отдела:', error);
-//     alert('Не удалось загрузить пользователей отдела');
-//   }
-// };
-
-const openTaskModal = async (task) => {
-  isLoading.value = true;
+const fetchComments = async (id) =>{
   try {
-    const response = await fetch(`/api/v1/tasks/${task.id}`);
-    if (!response.ok) throw new Error('Ошибка загрузки задачи');
-    
-    const fullTask = (await response.json()).task;
-    selectedTask.value = {
-      ...fullTask,
-      createdDate: fullTask.create_date,
-      assignedDate: fullTask.execute_date ? fullTask.execute_date : '-',
-      status: getStatusText(fullTask.status),
-      comments: sortCommentsByDate(await fetchComments(fullTask.id), true) // Здесь можно добавить загрузку комментариев
-    };
-    
-    isTaskModalOpen.value = true;
+    const response = await fetch(`/api/v1/comments/${id}`);
+    if (!response.ok) throw new Error('Ошибка загрузки комментариев задач');
+    const data = await response.json();
+    return data.comments || [];
   } catch (error) {
-    console.error('Ошибка загрузки задачи:', error);
-    alert('Не удалось загрузить задачу');
-  } finally {
-    isLoading.value = false;
+    console.error('Ошибка загрузки типов задач:', error);
+    alert('Не удалось загрузить типы задач');
+    return [];
   }
-};
-
-function sortCommentsByDate(comments, ascending = false) {
-  return comments.sort((a, b) => {
-    const parseDate = (dateStr) => {
-      const [datePart, timePart] = dateStr.split(', ');
-      const [day, month, year] = datePart.split('.');
-      const [hours, minutes, seconds] = timePart.split(':');
-      return new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`);
-    };
-
-    const dateA = parseDate(a.creation_date);
-    const dateB = parseDate(b.creation_date);
-    
-    return ascending ? dateA - dateB : dateB - dateA;
-  });
 }
 
-const closeTaskModal = () => {
-  isTaskModalOpen.value = false;
-  selectedTask.value = null;
+const handleCreateTask = async ({ task }) => {
+  try {
+    const taskToCreate = {
+      ...task,
+      initiator: userStore.userData.id,
+    };
+    
+    const response = await fetch('/api/v1/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(taskToCreate)
+    });
+    
+    if (!response.ok) throw new Error('Ошибка создания задачи');
+    
+    await fetchTasks();
+    closeCreateModal();
+    alert('Задача успешно создана');
+  } catch (error) {
+    console.error('Ошибка создания задачи:', error);
+    alert('Не удалось создать задачу');
+  }
 };
 
 const handleDeleteTask = async () => {
@@ -326,15 +297,47 @@ const handleDeleteTask = async () => {
   }
 };
 
-const handleCompleteTask = async () => {
-  if (!selectedTask.value) return;
-  
+const handleTakeInWork = async () => {
+  if (!selectedTask.value) {
+    alert("Не выбрана задача")
+    return;
+  }
   try {
+    const resp = {
+      status:1,
+    } 
     const response = await fetch(`/api/v1/tasks/${selectedTask.value.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
+      body: JSON.stringify(resp),
+    });
+    
+    if (!response.ok) throw new Error('Ошибка завершения задачи');
+    
+    await fetchTasks();
+    closeTaskModal();
+    alert('Задача успешно завершена');
+  } catch (error) {
+    console.error('Ошибка при взятии задачи:', error);
+    alert('Не удалось взять задачу в работу');
+  }
+}
+
+const handleCompleteTask = async () => {
+  if (!selectedTask.value) return;
+  try {
+    const resp = {
+      id:selectedTask.value.id,
+      status:2,
+    } 
+    const response = await fetch(`/api/v1/tasks/${selectedTask.value.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(resp),
     });
     
     if (!response.ok) throw new Error('Ошибка завершения задачи');
@@ -347,19 +350,6 @@ const handleCompleteTask = async () => {
     alert('Не удалось завершить задачу');
   }
 };
-
-const fetchComments = async (id) =>{
-  try {
-    const response = await fetch(`/api/v1/comments/${id}`);
-    if (!response.ok) throw new Error('Ошибка загрузки комментариев задач');
-    const data = await response.json();
-    return data.comments || [];
-  } catch (error) {
-    console.error('Ошибка загрузки типов задач:', error);
-    alert('Не удалось загрузить типы задач');
-    return [];
-  }
-}
 
 const handleAddComment = async (commentText) => {
   if (!selectedTask.value || !commentText.trim()) return;
@@ -416,49 +406,60 @@ const createTask = () => {
   isCreateModalOpen.value = true;
 };
 
+const openTaskModal = async (task) => {
+  isLoading.value = true;
+  try {
+    const response = await fetch(`/api/v1/tasks/${task.id}`);
+    if (!response.ok) throw new Error('Ошибка загрузки задачи');
+    
+    const fullTask = (await response.json()).task;
+    selectedTask.value = {
+      ...fullTask,
+      createdDate: fullTask.create_date,
+      assignedDate: fullTask.execute_date ? fullTask.execute_date : '-',
+      status: getStatusText(fullTask.status),
+      comments: sortCommentsByDate(await fetchComments(fullTask.id), true) // Здесь можно добавить загрузку комментариев
+    };
+    
+    isTaskModalOpen.value = true;
+  } catch (error) {
+    console.error('Ошибка загрузки задачи:', error);
+    alert('Не удалось загрузить задачу');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const closeTaskModal = () => {
+  isTaskModalOpen.value = false;
+  selectedTask.value = null;
+};
+
 const closeCreateModal = () => {
   isCreateModalOpen.value = false;
 };
 
-// const handleTaskTypeChange = (taskId) => {
-//   const selectedType = taskTypes.value.find(t => t.id === taskId);
-//   if (selectedType) {
-//     fetchDepartmentUsers(selectedType.department_id);
-//   }
-// };
-
-const handleCreateTask = async ({ task }) => {
-  try {
-    const taskToCreate = {
-      ...task,
-      initiator: userStore.userData.id,
+function sortCommentsByDate(comments, ascending = false) {
+  return comments.sort((a, b) => {
+    const parseDate = (dateStr) => {
+      const [datePart, timePart] = dateStr.split(', ');
+      const [day, month, year] = datePart.split('.');
+      const [hours, minutes, seconds] = timePart.split(':');
+      return new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`);
     };
-    
-    const response = await fetch('/api/v1/tasks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(taskToCreate)
-    });
-    
-    if (!response.ok) throw new Error('Ошибка создания задачи');
-    
-    await fetchTasks();
-    closeCreateModal();
-    alert('Задача успешно создана');
-  } catch (error) {
-    console.error('Ошибка создания задачи:', error);
-    alert('Не удалось создать задачу');
-  }
-};
 
-// Вспомогательные функции
+    const dateA = parseDate(a.creation_date);
+    const dateB = parseDate(b.creation_date);
+    
+    return ascending ? dateA - dateB : dateB - dateA;
+  });
+};
 
 const getStatusText = (statusCode) => {
   const statuses = {
-    0: 'В работе',
-    1: 'Выполнено',
+    0: 'Создана',
+    1: 'В работе',
+    2: 'Выполнено',
   };
   return statuses[statusCode] || 'Неизвестно';
 };

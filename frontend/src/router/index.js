@@ -32,11 +32,6 @@ const routes = [
     component: TaskPage
   },
   {
-    path: '/edo',
-    name: 'EDO',
-    component: EdoPage
-  },
-  {
     path: '/ecp',
     name: 'ECP',
     component: EcpPage

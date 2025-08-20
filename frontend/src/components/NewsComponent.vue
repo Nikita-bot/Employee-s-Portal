@@ -59,11 +59,6 @@ const createNews = async () => {
   isCreateModalOpen.value = true;
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleString();
-};
 
 
 const formatAuthor = (author) => {

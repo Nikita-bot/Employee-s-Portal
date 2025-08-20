@@ -34,7 +34,7 @@
               </option>
             </select>
             <button 
-              v-if="isExecutor && !isChangingExecutor" 
+              v-if="isExecutor && !isChangingExecutor && task.status !== 'В работе'" 
               class="change-executor-btn"
               @click="startChangeExecutor"
             >
@@ -77,7 +77,7 @@
               </thead>
               <tbody>
                 <tr v-for="(entry, index) in journalEntries" :key="index">
-                  <td>{{ formatDate(entry.creation_date) }}</td>
+                  <td>{{ entry.creation_date }}</td>
                   <td>{{ entry.action }}</td>
                 </tr>
               </tbody>
@@ -102,7 +102,14 @@
           Удалить задачу
         </button>
         <button 
-          v-if="isExecutor && task.status !== 1 && activeTab === 'info'"
+          v-if="isExecutor && task.status === 'Создана' && activeTab === 'info'"
+          class="complete-btn"
+          @click="$emit('take')"  
+        >
+          Взять в работу
+        </button>
+        <button 
+          v-if="isExecutor && task.status === 'В работе' && activeTab === 'info'"
           class="complete-btn"
           @click="$emit('complete')"
         >
@@ -136,7 +143,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close', 'delete', 'complete', 'add-comment', 'refresh-tasks']);
+const emit = defineEmits(['close', 'delete', 'complete', 'take', 'add-comment', 'refresh-tasks']);
 
 const newComment = ref('');
 const departmentUsers = ref([]);
@@ -157,12 +164,6 @@ const formatFullName = (surname, name, patronymic) => {
     }
   }
   return formatted;
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleString();
 };
 
 const fetchJournal = async () => {

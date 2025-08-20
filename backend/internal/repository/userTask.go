@@ -20,7 +20,7 @@ type (
 		GetDepartmentByTaskID(task_id int) []entity.Department
 		GetTaskByID(id int) (entity.UserTask, error)
 		DeleteTask(id int) error
-		UpdateTask(id int, date string) error
+		UpdateTask(id, status int, date string) error
 		UpdateExecutor(id int, executor int) error
 	}
 	userTaskRepo struct {
@@ -69,7 +69,7 @@ func (u userTaskRepo) TaskForUser(userId int) ([]entity.UserTask, error) {
             users init ON ut.initiator = init.id
         WHERE 
             ut.executor = $1 
-            AND ut.status NOT IN (1, 3)
+            AND ut.status NOT IN (2, 3)
         ORDER BY 
             ut.create_date DESC
     `
@@ -273,24 +273,34 @@ func (u userTaskRepo) DeleteTask(id int) error {
 	return nil
 }
 
-func (u userTaskRepo) UpdateTask(id int, date string) error {
+func (u userTaskRepo) UpdateTask(id, status int, date string) error {
 	u.l.Debug("IN USER TASK REPO :: EXEC TASK")
 
 	query := `
-		UPDATE user_task SET status=1, execute_date = $2 WHERE id=$1
+		UPDATE user_task SET status=$3, execute_date=$2 WHERE id=$1
 	`
 
-	_, err := u.db.Exec(query, id, date)
+	_, err := u.db.Exec(query, id, date, status)
 	if err != nil {
 		u.l.Error(err.Error())
 		return errors.New("CAN`T EXEC TASK")
 	}
 
+	var tj entity.TaskJournal
 	loc := time.FixedZone("UTC+7", 7*60*60)
-	tj := entity.TaskJournal{
-		UserTaskID:    int(id),
-		Action:        "Задача " + strconv.Itoa(int(id)) + " выполнена",
-		Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
+
+	if status == 2 {
+		tj = entity.TaskJournal{
+			UserTaskID:    int(id),
+			Action:        "Задача " + strconv.Itoa(int(id)) + " выполнена",
+			Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
+		}
+	} else if status == 1 {
+		tj = entity.TaskJournal{
+			UserTaskID:    int(id),
+			Action:        "Задача " + strconv.Itoa(int(id)) + " взята в рабоу",
+			Creation_date: time.Now().In(loc).Format("02.01.2006, 15:04:05"),
+		}
 	}
 
 	_, err = u.db.NamedExec(`INSERT INTO task_journal (user_task_id, action, creation_date) VALUES (:user_task_id,:action,:creation_date)`, tj)

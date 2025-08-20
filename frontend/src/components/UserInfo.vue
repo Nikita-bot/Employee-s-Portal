@@ -66,7 +66,7 @@
             <span v-else>Не указан</span>
           </div>
             <div class="elData">
-              <span v-if="!userDataLocal.contacts?.boss">Не указан</span>
+              <span v-if="!userDataLocal.contacts?.boss">Каменева Е.А.</span>
               <span
                 v-else
                 class="boss-link"
@@ -156,6 +156,10 @@ const returnToUser = () => {
 };
 
 const fetchBossData = async (bossId) => {
+
+  if (!bossId){
+    return 
+  }
   try {
 
     const response = await fetch(`/api/v1/user/${bossId}`);

@@ -12,6 +12,7 @@ type (
 	UserService interface {
 		Login(login, pass string) (int, error)
 		GetUserByID(id int) (entity.User, error)
+		ChangePassword(id int, pass string) error
 	}
 	userService struct {
 		r repository.UserRepository
@@ -66,4 +67,15 @@ func (u userService) GetUserByID(id int) (entity.User, error) {
 
 	return user, nil
 
+}
+
+func (u userService) ChangePassword(id int, pass string) error {
+	u.l.Debug("IN USER REPO :: CHANGE PASSWORD")
+
+	err := u.r.ChangeUserPassword(id, pass)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -13,7 +13,7 @@ type (
 		TaskByUser(userId int) ([]entity.UserTask, error)
 		CreateTask(uc entity.UserTaskCreate) error
 		GetTaskByID(id int) (entity.UserTask, error)
-		ExecTask(id int, date string) error
+		ExecTask(id, status int, date string) error
 		ChangeExecutor(id, executor int) error
 		DeleteTask(id int) error
 	}
@@ -100,10 +100,10 @@ func (u userTaskService) GetTaskByID(id int) (entity.UserTask, error) {
 
 }
 
-func (u userTaskService) ExecTask(id int, date string) error {
+func (u userTaskService) ExecTask(id, status int, date string) error {
 	u.l.Debug("IN USER TASK SERVICE :: EXEC TASK")
 
-	err := u.r.UpdateTask(id, date)
+	err := u.r.UpdateTask(id, status, date)
 	if err != nil {
 		return err
 	}

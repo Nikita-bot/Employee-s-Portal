@@ -16,7 +16,7 @@ type (
 	UserRepository interface {
 		Login(login string) (string, error)
 		CreatePassword(login, pass string) error
-		ChangeUserPassword(userID int, oldPassword string, newPassword string) error
+		ChangeUserPassword(userID int, newPassword string) error
 		GetUserByLogin(login string) (int, error)
 		GetUserByID(id int) (entity.User, error)
 	}
@@ -64,23 +64,28 @@ func (u userRepo) CreatePassword(login, pass string) error {
 
 	_, err := u.db.Exec(query, pass, login)
 	if err != nil {
-		u.l.Debug("failed to create password: " + err.Error())
+		u.l.Error("failed to create password: " + err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (u userRepo) ChangeUserPassword(userID int, oldPassword string, newPassword string) error {
+func (u userRepo) ChangeUserPassword(userID int, newPassword string) error {
+
+	u.l.Debug("IN USER REPO :: CHANGE PASSWORD")
+
+	u.l.Debug("Fields:", zap.Int("ID", userID), zap.String("Password", newPassword))
+
 	query := `
         UPDATE users 
         SET password = $1
         WHERE id = $2 
-        AND password = $3
     `
 
-	_, err := u.db.Exec(query, newPassword, userID, oldPassword)
+	_, err := u.db.Exec(query, newPassword, userID)
 	if err != nil {
+		u.l.Error("failed to create password: " + err.Error())
 		return err
 	}
 
