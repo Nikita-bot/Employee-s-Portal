@@ -80,4 +80,4 @@ networks:
     driver_opts: 
       com.docker.network.driver.mtu: 1450
   portal_network:
-    external: true
+    driver: bridge

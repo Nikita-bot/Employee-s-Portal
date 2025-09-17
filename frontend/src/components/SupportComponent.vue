@@ -17,6 +17,15 @@
           </div>
           
           <div class="form-group">
+            <label for="priority">Приоритет</label>
+            <select id="priority" v-model="selectedPriority" class="form-select">
+              <option v-for="priority in priorityOptions" :key="priority.value" :value="priority.value">
+                {{ priority.text }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
             <label for="issue-description">Описание проблемы</label>
             <textarea 
               id="issue-description" 
@@ -42,17 +51,27 @@
   const userStore = useUserStore();
 
   const selectedIssue = ref('');
+  const selectedPriority = ref(2); // По умолчанию нормальный приоритет
   const issueDescription = ref('');
   const supportTasks = ref([]);
+  
+  const priorityOptions = [
+    { value: 1, text: 'Низкий' },
+    { value: 2, text: 'Нормальный' },
+    { value: 3, text: 'Высокий' }
+  ];
 
   const fetchSupportTasks = async () => {
     try {
-      const response = await fetch('/api/v1/tasks/support');
+      const response = await fetch('/api/v1/taskList');
       if (!response.ok) throw new Error('Ошибка получения задач');
-      supportTasks.value = (await response.json()).task_list || [];
+      
+      const data = await response.json();
+      supportTasks.value = (data.task_list || []).filter(task => task.type === "support");
+      
     } catch (error) {
-      console.error('Ошибка при получении задач:', error);
-      alert('Не удалось загрузить задачи поддержки');
+      console.error('Ошибка при получении задач поддержки:', error);
+      alert('Не удалось загрузить типы проблем');
     }
   };
 
@@ -72,6 +91,7 @@
         task_id: selectedIssue.value,
         initiator: userStore.userData.id,
         description: issueDescription.value,
+        priority: selectedPriority.value,
         status: 0, 
         create_date: new Date().toISOString().split('T')[0] 
       };
@@ -84,16 +104,21 @@
         body: JSON.stringify(taskToCreate)
       });
       
-      if (!response.ok) throw new Error('Ошибка создания задачи');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Ошибка HTTP: ${response.status}`);
+      }
       
-      await fetchSupportTasks();
       alert('Ваш запрос отправлен в техническую поддержку');
       
+      // Сброс формы
       selectedIssue.value = '';
       issueDescription.value = '';
+      selectedPriority.value = 2; // Сброс к нормальному приоритету
+      
     } catch (error) {
       console.error('Ошибка создания задачи:', error);
-      alert('Не удалось отправить запрос в поддержку');
+      alert(`Не удалось отправить запрос в поддержку: ${error.message}`);
     }
   };
 
@@ -112,6 +137,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 100vh;
+  background-color: #f5f7fb;
+  padding: 20px;
 }
 
 .support-header {
@@ -123,27 +151,31 @@
 .support-header h1 {
   color: #5662DE;
   font-size: 28px;
+  font-weight: 600;
 }
 
 .support-form-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
+  flex: 1;
 }
 
 .support-form-container {
   background-color: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 60vw; 
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 600px;
   box-sizing: border-box; 
+  height: 520px;
 }
 
 .support-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .form-group {
@@ -159,40 +191,85 @@
 }
 
 .form-select, .form-textarea {
-  padding: 10px 12px;
+  padding: 12px 16px;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .form-select {
-  height: 40px;
+  height: 48px;
+  background-color: #fff;
 }
 
 .form-textarea {
-  min-height: 120px;
+  min-height: 140px;
   resize: vertical;
+  line-height: 1.5;
 }
 
 .form-select:focus, .form-textarea:focus {
   outline: none;
   border-color: #5662DE;
+  box-shadow: 0 0 0 3px rgba(86, 98, 222, 0.1);
+}
+
+.form-select:hover, .form-textarea:hover {
+  border-color: #bbb;
 }
 
 .submit-btn {
   background-color: #5662DE;
   color: white;
   border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
+  padding: 14px 24px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: 500;
   align-self: flex-end;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  min-width: 160px;
 }
 
 .submit-btn:hover {
   background-color: #454fc4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(86, 98, 222, 0.2);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(86, 98, 222, 0.2);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .support-page {
+    padding: 16px;
+  }
+  
+  .support-header {
+    margin: 20px 0;
+  }
+  
+  .support-header h1 {
+    font-size: 24px;
+  }
+  
+  .support-form-container {
+    padding: 24px 20px;
+  }
+  
+  .support-form {
+    gap: 20px;
+  }
+  
+  .submit-btn {
+    align-self: stretch;
+    width: 100%;
+  }
 }
 </style>

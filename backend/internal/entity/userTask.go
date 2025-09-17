@@ -8,6 +8,7 @@ type (
 		Initiator   UserMainData `json:"initiator" db:"initiator"`
 		Description string       `json:"description" db:"description"`
 		Status      int          `json:"status" db:"status"`
+		Priority    int          `json:"priority" db:"priority"`
 		CreateDate  string       `json:"create_date" db:"create_date"`
 		ExecuteDate string       `json:"execute_date" db:"execute_date"`
 	}
@@ -18,6 +19,7 @@ type (
 		Initiator   int    `json:"initiator" form:"initiator" db:"initiator"`
 		Description string `json:"description" form:"description" db:"description"`
 		Status      int    `json:"status" form:"status" db:"status"`
+		Priority    int    `json:"priority" db:"priority"`
 		CreateDate  string `json:"create_date" form:"create_date" db:"create_date"`
 	}
 

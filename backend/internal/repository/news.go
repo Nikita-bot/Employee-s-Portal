@@ -56,7 +56,7 @@ func (r newsRepo) GetAll() ([]entity.News, error) {
 }
 
 func (r newsRepo) Create(n entity.NewsCreate) error {
-	r.l.Debug("IN USER TASK SERVICE :: CREATE TASK")
+	r.l.Debug("IN NEWS SERVICE :: CREATE NEWS")
 
 	_, err := r.db.NamedExec(`INSERT INTO news (title, author, content, date) VALUES (:title, :author, :content, :date)`, n)
 	if err != nil {

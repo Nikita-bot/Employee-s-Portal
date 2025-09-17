@@ -41,15 +41,20 @@
               Сменить исполнителя
             </button>
           </p>
+          <p><strong>Приоритет:</strong> 
+            <span class="priority-badge" :class="getPriorityClass(task.priority)">
+              {{ getPriorityText(task.priority) }}
+            </span>
+          </p>
           <p><strong>Описание:</strong> {{ task.description }}</p>
           <p><strong>Статус:</strong> {{ task.status }}</p>
-          <p><strong>Дата создания:</strong> {{task.create_date }}</p>
+          <p><strong>Дата создания:</strong> {{ task.create_date }}</p>
           <p><strong>Дата выполнения:</strong> {{ task.execute_date ? task.execute_date : 'Не выполнено' }}</p>
 
           <div class="comments-section">
             <h4>Комментарии:</h4>
             <div v-for="comment in task.comments" :key="comment.id" class="comment">
-              <p><strong>{{formatFullName(comment.author.surname, comment.author.name,comment.author.patronymic)  }}:</strong> {{ comment.comment }}</p>
+              <p><strong>{{ formatFullName(comment.author.surname, comment.author.name, comment.author.patronymic) }}:</strong> {{ comment.comment }}</p>
               <small>{{ comment.creation_date }}</small>
             </div>
             
@@ -164,6 +169,26 @@ const formatFullName = (surname, name, patronymic) => {
     }
   }
   return formatted;
+};
+
+// Функция для получения текстового представления приоритета
+const getPriorityText = (priority) => {
+  const priorityMap = {
+    1: 'Низкий',
+    2: 'Нормальный',
+    3: 'Высокий'
+  };
+  return priorityMap[priority] || 'Не указан';
+};
+
+// Функция для получения класса CSS в зависимости от приоритета
+const getPriorityClass = (priority) => {
+  const priorityClassMap = {
+    1: 'priority-low',
+    2: 'priority-normal',
+    3: 'priority-high'
+  };
+  return priorityClassMap[priority] || '';
 };
 
 const fetchJournal = async () => {
@@ -364,6 +389,30 @@ watch(() => activeTab.value, (newTab) => {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8em;
+}
+
+/* Стили для отображения приоритета */
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.priority-low {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.priority-normal {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.priority-high {
+  background-color: #ffebee;
+  color: #c62828;
+  font-weight: bold;
 }
 
 .comments-section {

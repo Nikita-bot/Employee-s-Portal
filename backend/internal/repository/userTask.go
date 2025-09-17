@@ -49,6 +49,7 @@ func (u userTaskRepo) TaskForUser(userId int) ([]entity.UserTask, error) {
             ut.task_id,
             ut.description,
             ut.status,
+			ut.priority,
             ut.create_date,
             ut.execute_date,
             -- Данные исполнителя
@@ -94,6 +95,7 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
             ut.task_id,
             ut.description,
             ut.status,
+			ut.priority,
             ut.create_date,
             ut.execute_date,
             -- Данные исполнителя
@@ -175,11 +177,11 @@ func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 
 	row := u.db.QueryRow(`
     INSERT INTO user_task 
-    (task_id, executor, initiator, description, status, create_date)
-    VALUES ($1, $2, $3, $4, $5, $6) 
+    (task_id, executor, initiator, description, status, priority, create_date)
+    VALUES ($1, $2, $3, $4, $5, $6, $7) 
     RETURNING id`,
 		uc.Task, uc.Executor, uc.Initiator, uc.Description,
-		uc.Status, uc.CreateDate)
+		uc.Status, uc.Priority, uc.CreateDate)
 
 	err := row.Scan(&id)
 	if err != nil {
@@ -211,6 +213,7 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
             ut.task_id,
             ut.description,
             ut.status,
+			ut.priority,
             ut.create_date,
             ut.execute_date,
             -- Данные исполнителя

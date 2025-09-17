@@ -50,7 +50,7 @@ func (tr taskRepo) GetIT() ([]entity.Task, error) {
 	var tl []entity.Task
 	//449 - отдел АСУ
 	query := `
-		SELECT t.id, t.name 
+		SELECT t.id, t.name, t.type
 		from tasks t
 		join task_department td on td.task_id = t.id
 		WHERE td.department_id = 449

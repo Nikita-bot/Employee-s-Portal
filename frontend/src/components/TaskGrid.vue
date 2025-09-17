@@ -59,6 +59,15 @@
       </div>
       <div 
         class="grid-header sortable"
+        @click="sortBy('priority')"
+      >
+        Приоритет
+        <span v-if="sortField === 'priority'" class="sort-icon">
+          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+        </span>
+      </div>
+      <div 
+        class="grid-header sortable"
         @click="sortBy('status')"
       >
         Статус
@@ -99,10 +108,18 @@
           {{ activeTab === 'assigned' ? formatFullName(task.initiator.surname, task.initiator.name, task.initiator.patronymic) : formatFullName(task.executor.surname, task.executor.name, task.executor.patronymic) }}
         </div>
         <div 
-          class="grid-item clickable"
+          class="grid-item clickable description-cell"
           @click="openTaskModal(task)"
         >
           {{ task.description }}
+        </div>
+        <div 
+          class="grid-item clickable"
+          @click="openTaskModal(task)"
+        >
+          <span class="priority-badge" :class="getPriorityClass(task.priority)">
+            {{ getPriorityText(task.priority) }}
+          </span>
         </div>
         <div 
           class="grid-item clickable"
@@ -176,8 +193,14 @@ const displayedTasks = computed(() => {
   
   if (sortField.value) {
     return [...taskList].sort((a, b) => {
-      const valueA = a[sortField.value];
-      const valueB = b[sortField.value];
+      let valueA = a[sortField.value];
+      let valueB = b[sortField.value];
+      
+      // Специальная обработка для приоритета (числовое сравнение)
+      if (sortField.value === 'priority') {
+        valueA = Number(valueA);
+        valueB = Number(valueB);
+      }
       
       if (valueA < valueB) return sortDirection.value === 'asc' ? -1 : 1;
       if (valueA > valueB) return sortDirection.value === 'asc' ? 1 : -1;
@@ -207,17 +230,19 @@ const fetchTasks = async () => {
     tasks.value.assigned = data.executor || [];
     tasks.value.created = data.initiator || [];
     
-    // Форматируем даты
+    // Форматируем даты и статусы
     tasks.value.assigned.forEach(task => {
       task.createdDate = task.create_date;
       task.assignedDate = task.execute_date ? task.execute_date : '-';
       task.status = getStatusText(task.status);
+      task.priority = task.priority || 2; // По умолчанию нормальный приоритет
     });
     
     tasks.value.created.forEach(task => {
       task.createdDate = task.create_date;
       task.assignedDate = task.execute_date ? task.execute_date : '-';
       task.status = getStatusText(task.status);
+      task.priority = task.priority || 2; // По умолчанию нормальный приоритет
     });
     
   } catch (error) {
@@ -232,7 +257,8 @@ const fetchTaskTypes = async () => {
   try {
     const response = await fetch('/api/v1/taskList');
     if (!response.ok) throw new Error('Ошибка загрузки типов задач');
-    taskTypes.value = (await response.json()).task_list || [];
+    const data = await response.json();
+    taskTypes.value = (data.task_list || []).filter(task => task.type !== "support");
   } catch (error) {
     console.error('Ошибка загрузки типов задач:', error);
     alert('Не удалось загрузить типы задач');
@@ -246,8 +272,7 @@ const fetchComments = async (id) =>{
     const data = await response.json();
     return data.comments || [];
   } catch (error) {
-    console.error('Ошибка загрузки типов задач:', error);
-    alert('Не удалось загрузить типы задач');
+    console.error('Ошибка загрузки комментариев:', error);
     return [];
   }
 }
@@ -314,11 +339,11 @@ const handleTakeInWork = async () => {
       body: JSON.stringify(resp),
     });
     
-    if (!response.ok) throw new Error('Ошибка завершения задачи');
+    if (!response.ok) throw new Error('Ошибка взятия задачи в работу');
     
     await fetchTasks();
     closeTaskModal();
-    alert('Задача успешно завершена');
+    alert('Задача успешно взята в работу');
   } catch (error) {
     console.error('Ошибка при взятии задачи:', error);
     alert('Не удалось взять задачу в работу');
@@ -379,7 +404,7 @@ const handleAddComment = async (commentText) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user_task_id: selectedTask.value.id, // предполагается, что id задачи хранится в selectedTask.value.id
+        user_task_id: selectedTask.value.id,
         author_id: newCommentPost.author,
         comment: newCommentPost.text,
         creation_date: newCommentPost.date
@@ -418,7 +443,8 @@ const openTaskModal = async (task) => {
       createdDate: fullTask.create_date,
       assignedDate: fullTask.execute_date ? fullTask.execute_date : '-',
       status: getStatusText(fullTask.status),
-      comments: sortCommentsByDate(await fetchComments(fullTask.id), true) // Здесь можно добавить загрузку комментариев
+      priority: fullTask.priority || 2,
+      comments: sortCommentsByDate(await fetchComments(fullTask.id), true)
     };
     
     isTaskModalOpen.value = true;
@@ -464,6 +490,26 @@ const getStatusText = (statusCode) => {
   return statuses[statusCode] || 'Неизвестно';
 };
 
+// Функция для получения текстового представления приоритета
+const getPriorityText = (priority) => {
+  const priorityMap = {
+    1: 'Низкий',
+    2: 'Нормальный',
+    3: 'Высокий'
+  };
+  return priorityMap[priority] || 'Не указан';
+};
+
+// Функция для получения класса CSS в зависимости от приоритета
+const getPriorityClass = (priority) => {
+  const priorityClassMap = {
+    1: 'priority-low',
+    2: 'priority-normal',
+    3: 'priority-high'
+  };
+  return priorityClassMap[priority] || '';
+};
+
 const formatFullName = (surname, name, patronymic) => {
   if (!surname) return '';
   
@@ -485,7 +531,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Существующие стили */
 .mainContent {
   margin-top: 40px;
   margin-left: 40px;
@@ -531,25 +576,24 @@ onMounted(() => {
   width: 90%;
   margin-top: 50px;
   display: grid;
-  grid-template-columns: 7% 15% 30% 15% 15% 18%;
+  grid-template-columns: 7% 15% 25% 12% 13% 14% 14%;
   gap: 1px; 
   border-radius: 15px;
   overflow: hidden;
   font-size: 20px;
-  
-  /* Вертикальная прокрутка */
-  max-height: 80vh; /* или любая другая подходящая высота */
+  max-height: 80vh;
   overflow-y: auto;
-  
-  /* Стилизация скроллбара (невидимый) */
-  scrollbar-width: none; /* Для Firefox */
-  -ms-overflow-style: none; /* Для IE и Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.task-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .grid-header {
   background-color: #5662DE;
   color: white;
-  padding: 20px 10px;
   text-align: center;
   font-size: 20px;
 }
@@ -560,6 +604,14 @@ onMounted(() => {
   text-align: center;
   word-break: break-word;
   margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.description-cell {
+  text-align: left;
+  justify-content: flex-start;
 }
 
 .clickable {
@@ -626,5 +678,62 @@ onMounted(() => {
   font-weight: bold;
 }
 
+/* Стили для отображения приоритета */
+.priority-badge {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.85em;
+  font-weight: 500;
+  min-width: 80px;
+  display: inline-block;
+  text-align: center;
+}
 
+.priority-low {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.priority-normal {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #bbdefb;
+}
+
+.priority-high {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  font-weight: bold;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 1600px) {
+  .mainContent {
+    width: 95%;
+    margin-left: 20px;
+  }
+  
+  .task-grid {
+    grid-template-columns: 8% 14% 20% 12% 12% 16% 16%;
+    font-size: 16px;
+  }
+  
+  .grid-header {
+    font-size: 16px;
+    padding: 15px 8px;
+  }
+  
+  .grid-item {
+    padding: 15px 8px;
+    font-size: 14px;
+  }
+  
+  .priority-badge {
+    padding: 4px 8px;
+    font-size: 0.8em;
+    min-width: 70px;
+  }
+}
 </style>
