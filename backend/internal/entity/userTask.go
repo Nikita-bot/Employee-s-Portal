@@ -20,6 +20,7 @@ type (
 		Description string `json:"description" form:"description" db:"description"`
 		Status      int    `json:"status" form:"status" db:"status"`
 		Priority    int    `json:"priority" db:"priority"`
+		BranchID    int    `json:"branch_id"`
 		CreateDate  string `json:"create_date" form:"create_date" db:"create_date"`
 	}
 

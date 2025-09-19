@@ -282,6 +282,7 @@ const handleCreateTask = async ({ task }) => {
     const taskToCreate = {
       ...task,
       initiator: userStore.userData.id,
+      branch_id: userStore.userData.branch_id
     };
     
     const response = await fetch('/api/v1/tasks', {
@@ -315,7 +316,6 @@ const handleDeleteTask = async () => {
     
     await fetchTasks();
     closeTaskModal();
-    alert('Задача успешно удалена');
   } catch (error) {
     console.error('Ошибка удаления задачи:', error);
     alert('Не удалось удалить задачу');
@@ -343,7 +343,7 @@ const handleTakeInWork = async () => {
     
     await fetchTasks();
     closeTaskModal();
-    alert('Задача успешно взята в работу');
+
   } catch (error) {
     console.error('Ошибка при взятии задачи:', error);
     alert('Не удалось взять задачу в работу');
@@ -369,7 +369,6 @@ const handleCompleteTask = async () => {
     
     await fetchTasks();
     closeTaskModal();
-    alert('Задача успешно завершена');
   } catch (error) {
     console.error('Ошибка завершения задачи:', error);
     alert('Не удалось завершить задачу');

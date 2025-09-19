@@ -11,6 +11,7 @@ type (
 	TaskService interface {
 		GetAllTask() ([]entity.Task, error)
 		GetITTask() ([]entity.Task, error)
+		GetTaskByID(id int) (entity.Task, error)
 	}
 	taskService struct {
 		r repository.TaskRepository
@@ -45,4 +46,15 @@ func (ts taskService) GetITTask() ([]entity.Task, error) {
 	}
 
 	return tl, nil
+}
+
+func (ts taskService) GetTaskByID(id int) (entity.Task, error) {
+	ts.l.Debug("IN TASK LIST SERVICE :: GET TASK BY ID")
+
+	t, err := ts.r.GetByID(id)
+	if err != nil {
+		return entity.Task{}, err
+	}
+
+	return t, nil
 }

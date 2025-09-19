@@ -11,6 +11,7 @@ type (
 	TaskRepository interface {
 		GetAll() ([]entity.Task, error)
 		GetIT() ([]entity.Task, error)
+		GetByID(id int) (entity.Task, error)
 	}
 
 	taskRepo struct {
@@ -39,6 +40,24 @@ func (tr taskRepo) GetAll() ([]entity.Task, error) {
 	if err != nil {
 		tr.l.Error(err.Error())
 		return nil, err
+	}
+
+	return tl, nil
+}
+
+func (tr taskRepo) GetByID(id int) (entity.Task, error) {
+	tr.l.Info("IN TASK LIST REPO :: GET ALL TASKS")
+
+	var tl entity.Task
+
+	query := `
+		SELECT * FROM tasks WHERE id=$1
+	`
+
+	err := tr.db.Get(&tl, query, id)
+	if err != nil {
+		tr.l.Error(err.Error())
+		return entity.Task{}, err
 	}
 
 	return tl, nil

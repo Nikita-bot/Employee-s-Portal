@@ -30,7 +30,7 @@ type (
 		Patronymic string `json:"patronymic" db:"patronymic"`
 		Department string `json:"department" db:"department"`
 	}
-
+	// ПОПРАВИТЬ BRANCH_ID В РЕПОЗИТОРИИ И НА КЛИЕНТЕ
 	Employee struct {
 		ID            string       `json:"id" db:"id"`
 		TabNum        string       `json:"tab_num" db:"tab_num"`
@@ -42,6 +42,8 @@ type (
 		OtherPosition []Position   `json:"other_position"`
 		DepartmentID  string       `db:"depart_id"`
 		Department    string       `json:"department"`
+		BranchID      int          `json:"branch_id" db:"branch_id"`
+		Branch        string       `json:"branch"`
 		BossID        int          `db:"boss"`
 		Boss          UserMainData `json:"boss"`
 	}

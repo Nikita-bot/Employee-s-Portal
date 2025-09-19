@@ -152,6 +152,26 @@ func (u userRepo) GetDepartmentByUserID(id int) entity.Department {
 
 }
 
+func (u userRepo) GetBranchByUserID(id int) entity.Branch {
+
+	var department entity.Branch
+
+	query := `
+		SELECT d.id, d.name 
+		FROM branches d
+		JOIN employee e ON e.branch_id = d.id
+		JOIN users u ON u.id = e.user_id
+		WHERE u.id = $1
+	`
+	err := u.db.Get(&department, query, id)
+	if err != nil {
+		return entity.Branch{}
+	}
+
+	return department
+
+}
+
 func (u userRepo) GetUserByID(id int) (entity.User, error) {
 	u.l.Debug("IN USER REPO :: GET USER BY ID ")
 
@@ -192,7 +212,8 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 			e.start_date AS "employee.start_date",
 			e.end_date AS "employee.end_date",
 			e.position AS "employee.position",
-			e.depart_id AS "employee.depart_id"
+			e.depart_id AS "employee.depart_id",
+			e.branch_id AS "employee.branch_id"
 		FROM 
 			users u
 		LEFT JOIN 
@@ -213,6 +234,8 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 	user.Roles = []entity.Role{}
 	department := u.GetDepartmentByUserID(user.ID)
 	user.Employee.Department = department.Name
+	branch := u.GetBranchByUserID(user.ID)
+	user.Employee.Branch = branch.Name
 	boss := u.GetUserBoss(user.Employee.BossID)
 	user.Employee.Boss = boss
 	roles := u.GetUserRoles(user.ID)

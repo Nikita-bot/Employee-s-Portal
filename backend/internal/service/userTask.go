@@ -18,15 +18,17 @@ type (
 		DeleteTask(id int) error
 	}
 	userTaskService struct {
-		r repository.UserTaskRepository
-		l *zap.Logger
+		r  repository.UserTaskRepository
+		l  *zap.Logger
+		ts TaskService
 	}
 )
 
-func NewUserTaskService(r repository.UserTaskRepository, l *zap.Logger) UserTaskService {
+func NewUserTaskService(r repository.UserTaskRepository, l *zap.Logger, ts TaskService) UserTaskService {
 	return &userTaskService{
-		r: r,
-		l: l,
+		r:  r,
+		l:  l,
+		ts: ts,
 	}
 }
 
@@ -55,12 +57,22 @@ func (u userTaskService) TaskByUser(userId int) ([]entity.UserTask, error) {
 func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
 	u.l.Debug("IN USER TASK SERVICE :: CREATE TASK")
 
-	var deps []entity.Department
+	u.l.Debug("IN USER TASK SERVICE", zap.Int("branch_id", uc.BranchID))
 
-	deps = u.r.GetDepartmentByTaskID(uc.Task)
+	var isSupp bool
 
+	taskType, err := u.ts.GetTaskByID(uc.Task)
+	if err != nil {
+		u.l.Error("IN USER TASK SERVICE", zap.Error(err))
+		return err
+	}
+
+	isSupp = taskType.Type == "support"
+
+	deps := u.r.GetDepartmentByTaskID(uc.Task)
+	u.l.Debug("IN SERVICE", zap.Any("User:", uc.Initiator))
 	for _, dep := range deps {
-		ut, err := u.r.GetUserAndCountTasksByDepID(dep.ID)
+		ut, err := u.r.GetUserAndCountTasksByDepID(dep.ID, uc.BranchID, uc.Initiator, isSupp)
 		if err != nil {
 			return err
 		}

@@ -44,7 +44,6 @@
 
   const selectedItem = ref('');
 
-  // Определяем, находимся ли мы на странице профиля
  const updateSelectedItem = () => {
   if (route.path === '/user') {
     selectedItem.value = '';

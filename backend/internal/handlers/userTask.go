@@ -99,6 +99,8 @@ func (uh userTaskHandler) postUserTask(c echo.Context) error {
 		return c.String(401, "bad request")
 	}
 
+	uh.l.Debug("IN USER TASK SERVICE", zap.Int("branch_id", uc.BranchID))
+
 	err = uh.s.CreateTask(uc)
 	if err != nil {
 		return c.String(501, err.Error())

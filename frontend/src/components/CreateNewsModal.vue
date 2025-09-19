@@ -79,7 +79,6 @@ const createNews = async () => {
     
     emits('created');
     closeModal();
-    alert('Новость успешно создана');
   } catch (error) {
     console.error('Ошибка при создании новости:', error);
     alert('Не удалось создать новость');

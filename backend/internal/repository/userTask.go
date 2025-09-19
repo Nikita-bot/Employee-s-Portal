@@ -15,7 +15,7 @@ type (
 	UserTaskRepository interface {
 		TaskForUser(userId int) ([]entity.UserTask, error)
 		TaskByUser(userId int) ([]entity.UserTask, error)
-		GetUserAndCountTasksByDepID(id int) ([]entity.UserCountTask, error)
+		GetUserAndCountTasksByDepID(id, branchId, initiator int, isSuppot bool) ([]entity.UserCountTask, error)
 		CreateTask(uc entity.UserTaskCreate) error
 		GetDepartmentByTaskID(task_id int) []entity.Department
 		GetTaskByID(id int) (entity.UserTask, error)
@@ -147,24 +147,50 @@ func (u userTaskRepo) GetDepartmentByTaskID(task_id int) []entity.Department {
 	return departments
 }
 
-func (u userTaskRepo) GetUserAndCountTasksByDepID(id int) ([]entity.UserCountTask, error) {
-
+func (u userTaskRepo) GetUserAndCountTasksByDepID(depId, branchId, initiator int, isSupport bool) ([]entity.UserCountTask, error) {
 	var uc []entity.UserCountTask
 
-	query := `
-		SELECT u.id as user_id, COUNT(ut.id) as task_count
-		FROM users u
-		LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
-		JOIN employee e ON u.id = e.user_id
-		WHERE e.depart_id = $1
-		GROUP BY u.id
-	`
+	type QueryParams struct {
+		DepID       int `db:"dep_id"`
+		BranchID    int `db:"branch_id"`
+		InitiatorID int `db:"initiator_id"`
+	}
 
-	err := u.db.Select(&uc, query, id)
+	params := QueryParams{
+		DepID:       depId,
+		BranchID:    branchId,
+		InitiatorID: initiator,
+	}
+
+	query := `
+        SELECT u.id as user_id, COUNT(ut.id) as task_count
+        FROM users u
+        LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
+        JOIN employee e ON u.id = e.user_id
+        JOIN branches b ON b.id = e.branch_id
+        WHERE e.depart_id = :dep_id AND u.id != :initiator_id
+    `
+
+	if isSupport {
+		query += " AND e.branch_id = :branch_id"
+	}
+
+	query += " GROUP BY u.id"
+
+	stmt, err := u.db.PrepareNamed(query)
 	if err != nil {
 		u.l.Error(err.Error())
-		return []entity.UserCountTask{}, err
+		return nil, err
 	}
+	defer stmt.Close()
+
+	err = stmt.Select(&uc, params)
+	if err != nil {
+		u.l.Error(err.Error())
+		return nil, err
+	}
+
+	u.l.Debug("IN REPO USERS IN DEP", zap.Any("Users:", uc))
 
 	return uc, nil
 }

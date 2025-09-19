@@ -55,6 +55,19 @@ services:
     networks:
       - portal_network
   
+  portal_export:
+    container_name: portal_export
+    restart: always
+    build:
+      context: ./export
+      dockerfile: Dockerfile
+    ports: 
+      - 8081:8081
+    depends_on:
+      - portal_backend
+    networks:
+      - portal_network
+  
   portal_frontend:
     container_name: portal_frontend
     env_file:

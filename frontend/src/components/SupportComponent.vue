@@ -50,6 +50,10 @@
 
   const userStore = useUserStore();
 
+  if (!userStore.userData.id) {
+    router.push('/login')
+  }
+
   const selectedIssue = ref('');
   const selectedPriority = ref(2); // По умолчанию нормальный приоритет
   const issueDescription = ref('');
@@ -87,12 +91,14 @@
     }
     
     try {
+      console.log(userStore.userData)
       const taskToCreate = {
         task_id: selectedIssue.value,
         initiator: userStore.userData.id,
         description: issueDescription.value,
         priority: selectedPriority.value,
-        status: 0, 
+        status: 0,
+        branch_id: userStore.userData.employee.branch_id, 
         create_date: new Date().toISOString().split('T')[0] 
       };
       
