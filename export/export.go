@@ -172,8 +172,6 @@ func processEmployees(conf *config.Config, db *sqlx.DB) {
 		_, exists := depInBranch2[emp.Depart.Name]
 		if exists {
 			employees[i].BranchID = 2
-		} else {
-			employees[i].BranchID = 1
 		}
 
 		// Создаем сотрудника

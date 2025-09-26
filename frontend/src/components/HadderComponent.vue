@@ -93,6 +93,10 @@ import logo from '@/assets/logo.png';
 
 const router = useRouter();
 const userStore = useUserStore();
+
+if (!userStore.userData.id) {
+  router.push('/login')
+}
 const route = useRoute();
 
 const isMenuOpen = ref(false);

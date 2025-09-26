@@ -20,6 +20,9 @@
   const route = useRoute();
   const router = useRouter();
   const userStore = useUserStore();
+  if (!userStore.userData.id) {
+    router.push('/login')
+  }
 
 
   const menuItems = ref(userStore.userData.employee.department == "отдел автоматизированных систем управления" ? 

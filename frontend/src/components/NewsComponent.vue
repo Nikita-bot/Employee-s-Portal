@@ -34,6 +34,9 @@ import CreateNewsModal from '@/components/CreateNewsModal.vue';
 const isCreateModalOpen = ref(false);
 
 const userStore = useUserStore();
+if (!userStore.userData.id) {
+  router.push('/login')
+}
 const newsList = ref([]);
 
 

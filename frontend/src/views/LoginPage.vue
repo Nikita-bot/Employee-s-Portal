@@ -46,6 +46,9 @@ import logo from '@/assets/logo.png';
 
 const router = useRouter();
 const userStore = useUserStore();
+if (!userStore.userData.id) {
+  router.push('/login')
+}
 
 const orgName = 'ГАУЗ ККБСМБ им. Подгорбунского';
 const portalName = 'Корпоративный портал';

@@ -106,6 +106,9 @@ const props = defineProps({
 })
 
 const userStore = useUserStore();
+if (!userStore.userData.id) {
+  router.push('/login')
+}
 const route = useRoute()
 const isShowingBoss = ref(false);
 const showTooltip = ref(false);

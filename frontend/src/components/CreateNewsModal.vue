@@ -42,6 +42,10 @@ import { ref, defineProps, defineEmits } from 'vue';
 import { useUserStore } from '@/stores/user';
 
 const userStore = useUserStore();
+
+if (!userStore.userData.id) {
+  router.push('/login')
+}
 const props = defineProps({
   isOpen: Boolean
 });

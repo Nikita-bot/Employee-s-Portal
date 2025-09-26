@@ -171,6 +171,9 @@ import TaskModal from './TaskModal.vue';
 import CreateTaskModal from './CreateTaskModal.vue';
 
 const userStore = useUserStore();
+if (!userStore.userData.id) {
+  router.push('/login')
+}
 
 const activeTab = ref('assigned');
 const selectedTask = ref(null);
