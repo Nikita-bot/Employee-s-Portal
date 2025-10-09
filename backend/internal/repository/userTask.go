@@ -15,13 +15,15 @@ type (
 	UserTaskRepository interface {
 		TaskForUser(userId int) ([]entity.UserTask, error)
 		TaskByUser(userId int) ([]entity.UserTask, error)
-		GetUserAndCountTasksByDepID(id, branchId, initiator int, isSuppot bool) ([]entity.UserCountTask, error)
-		CreateTask(uc entity.UserTaskCreate) error
-		GetDepartmentByTaskID(task_id int) []entity.Department
 		GetTaskByID(id int) (entity.UserTask, error)
+		CreateTask(uc entity.UserTaskCreate) error
 		DeleteTask(id int) error
 		UpdateTask(id, status int, date string) error
 		UpdateExecutor(id int, executor int) error
+
+		GetUserAndCountTasksByDepID(id, branchId, initiator int, isSuppot bool) ([]entity.UserCountTask, error)
+		GetDepartmentByTaskID(task_id int) []entity.Department
+		GetTaskRoles(taskID int) ([]int, error)
 	}
 	userTaskRepo struct {
 		db *sqlx.DB
@@ -147,7 +149,25 @@ func (u userTaskRepo) GetDepartmentByTaskID(task_id int) []entity.Department {
 	return departments
 }
 
+func (u userTaskRepo) GetTaskRoles(taskID int) ([]int, error) {
+	query := `
+		SELECT role_id 
+		FROM task_roles 
+		WHERE task_id = $1
+	`
+
+	var roleIDs []int
+	err := u.db.Select(&roleIDs, query, taskID)
+	if err != nil {
+		u.l.Error("Failed to get task roles", zap.Error(err))
+		return nil, err
+	}
+
+	return roleIDs, nil
+}
+
 func (u userTaskRepo) GetUserAndCountTasksByDepID(depId, branchId, initiator int, isSupport bool) ([]entity.UserCountTask, error) {
+
 	var uc []entity.UserCountTask
 
 	type QueryParams struct {

@@ -548,4 +548,8 @@ watch(() => activeTab.value, (newTab) => {
 h3 {
   color: #FFFFFF;
 }
+
+strong{
+  margin-right: 5px;
+}
 </style>

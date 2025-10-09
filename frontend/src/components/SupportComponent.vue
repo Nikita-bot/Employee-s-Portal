@@ -16,6 +16,58 @@
             </select>
           </div>
           
+          <!-- Дополнительные поля для принтеров -->
+          <div v-if="showPrinterFields" class="additional-fields">
+            <div class="form-group">
+              <label for="printer-model">Модель принтера</label>
+              <input 
+                id="printer-model" 
+                v-model="printerModel" 
+                type="text" 
+                class="form-select" 
+                placeholder="Введите модель принтера"
+              >
+            </div>
+            
+            <div class="form-group">
+              <label for="printer-location">Место расположения принтера</label>
+              <input 
+                id="printer-location" 
+                v-model="printerLocation" 
+                type="text" 
+                class="form-select" 
+                placeholder="Где находится принтер?"
+              >
+            </div>
+          </div>
+          
+          <!-- Дополнительные поля для компьютера -->
+          <div v-if="showComputerFields" class="additional-fields">
+            <div class="form-group">
+              <label for="computer-location">Место расположения компьютера</label>
+              <input 
+                id="computer-location" 
+                v-model="computerLocation" 
+                type="text" 
+                class="form-select" 
+                placeholder="Где находится компьютер?"
+              >
+            </div>
+          </div>
+          
+          <!-- Дополнительные поля для Ариадны -->
+          <div v-if="showMISFields" class="additional-fields">
+            <div class="form-group">
+              <label for="computer-location">Имя вашего компьютера</label>
+              <input 
+                id="computer-location" 
+                v-model="computerLocation" 
+                type="text" 
+                class="form-select" 
+                placeholder="Имя вашего компьютера?"
+              >
+            </div>
+          </div>
           <div class="form-group">
             <label for="priority">Приоритет</label>
             <select id="priority" v-model="selectedPriority" class="form-select">
@@ -45,25 +97,76 @@
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, computed, watch } from 'vue';
   import { useUserStore } from '@/stores/user';
+  import { useRouter } from 'vue-router';
 
   const userStore = useUserStore();
+  const router = useRouter();
 
   if (!userStore.userData.id) {
     router.push('/login')
   }
 
   const selectedIssue = ref('');
-  const selectedPriority = ref(2); // По умолчанию нормальный приоритет
+  const selectedPriority = ref(2);
   const issueDescription = ref('');
   const supportTasks = ref([]);
+  
+  // Дополнительные поля
+  const printerModel = ref('');
+  const printerLocation = ref('');
+  const computerLocation = ref('');
   
   const priorityOptions = [
     { value: 1, text: 'Низкий' },
     { value: 2, text: 'Нормальный' },
     { value: 3, text: 'Высокий' }
   ];
+
+  // Вычисляемые свойства для отображения дополнительных полей
+  const showPrinterFields = computed(() => {
+    if (!selectedIssue.value) return false;
+    
+    const selectedTask = supportTasks.value.find(task => task.id === selectedIssue.value);
+    if (!selectedTask) return false;
+    
+    // Проверяем по ключевым словам в названии задачи
+    const taskName = selectedTask.name.toLowerCase();
+    return taskName.includes('принтер') || taskName.includes('картридж');
+  });
+
+  const showComputerFields = computed(() => {
+    if (!selectedIssue.value) return false;
+    
+    const selectedTask = supportTasks.value.find(task => task.id === selectedIssue.value);
+    if (!selectedTask) return false;
+    
+    // Проверяем по ключевым словам в названии задачи
+    const taskName = selectedTask.name.toLowerCase();
+    return taskName.includes('компьютер') || taskName.includes('компьютера');
+  });
+
+  const showMISFields = computed(()=>{
+    if (!selectedIssue.value) return false;
+    
+    const selectedTask = supportTasks.value.find(task => task.id === selectedIssue.value);
+    if (!selectedTask) return false;
+    
+    // Проверяем по ключевым словам в названии задачи
+    const taskName = selectedTask.name.toLowerCase();
+    return taskName.includes('ариадна') || taskName.includes('программа') || taskName.includes('ариадной') || taskName.includes('программой');
+  })
+
+  // Добавим watch для отладки
+  watch(selectedIssue, (newValue) => {
+    console.log('Выбрана задача:', newValue);
+    const selectedTask = supportTasks.value.find(task => task.id === newValue);
+    console.log('Данные задачи:', selectedTask);
+    console.log('showPrinterFields:', showPrinterFields.value);
+    console.log('showComputerFields:', showComputerFields.value);
+    console.log('showMISFields',showMISFields.value);
+  });
 
   const fetchSupportTasks = async () => {
     try {
@@ -72,6 +175,8 @@
       
       const data = await response.json();
       supportTasks.value = (data.task_list || []).filter(task => task.type === "support");
+      
+      console.log('Загруженные задачи поддержки:', supportTasks.value);
       
     } catch (error) {
       console.error('Ошибка при получении задач поддержки:', error);
@@ -91,16 +196,36 @@
     }
     
     try {
-      console.log(userStore.userData)
+      const selectedTask = supportTasks.value.find(task => task.id === selectedIssue.value);
+      let fullDescription = issueDescription.value;
+      
+      // Добавляем дополнительную информацию в описание
+      if (showPrinterFields.value) {
+        fullDescription += `\n\nДополнительная информация:\n`;
+        if (printerModel.value) fullDescription += `Модель принтера: ${printerModel.value}\n`;
+        if (printerLocation.value) fullDescription += `Место расположения: ${printerLocation.value}`;
+      }
+      
+      if (showComputerFields.value && computerLocation.value) {
+        fullDescription += `\n\nДополнительная информация:\n`;
+        fullDescription += `Место расположения компьютера: ${computerLocation.value}`;
+      }
+      if(showMISFields.value && computerLocation.value){
+        fullDescription += `\n\nДополнительная информация:\n`;
+        fullDescription += `Имя компьютера: ${computerLocation.value}`;
+      }
+      
       const taskToCreate = {
         task_id: selectedIssue.value,
         initiator: userStore.userData.id,
-        description: issueDescription.value,
+        description: fullDescription,
         priority: selectedPriority.value,
         status: 0,
         branch_id: userStore.userData.employee.branch_id, 
         create_date: new Date().toISOString().split('T')[0] 
       };
+      
+      console.log('Отправляемые данные:', taskToCreate);
       
       const response = await fetch('/api/v1/tasks', {
         method: 'POST',
@@ -118,14 +243,21 @@
       alert('Ваш запрос отправлен в техническую поддержку');
       
       // Сброс формы
-      selectedIssue.value = '';
-      issueDescription.value = '';
-      selectedPriority.value = 2; // Сброс к нормальному приоритету
+      resetForm();
       
     } catch (error) {
       console.error('Ошибка создания задачи:', error);
       alert(`Не удалось отправить запрос в поддержку: ${error.message}`);
     }
+  };
+
+  const resetForm = () => {
+    selectedIssue.value = '';
+    issueDescription.value = '';
+    selectedPriority.value = 2;
+    printerModel.value = '';
+    printerLocation.value = '';
+    computerLocation.value = '';
   };
 
   const submitIssue = () => {
@@ -190,6 +322,16 @@
   gap: 8px;
 }
 
+.additional-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #5662DE;
+}
+
 .form-group label {
   color: #333;
   font-size: 16px;
@@ -238,6 +380,7 @@
   align-self: flex-end;
   transition: all 0.2s ease;
   min-width: 160px;
+  margin-top: 10px;
 }
 
 .submit-btn:hover {
@@ -271,6 +414,11 @@
   
   .support-form {
     gap: 20px;
+  }
+  
+  .additional-fields {
+    padding: 12px;
+    gap: 12px;
   }
   
   .submit-btn {

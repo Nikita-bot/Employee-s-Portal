@@ -15,6 +15,7 @@ services:
       - ${DB_PORT}:${DB_DOCKER_PORT}
     networks:
       - portal_network
+      
   portal_redis:
     image: "redis:alpine"
     container_name: portal_redis
