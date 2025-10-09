@@ -8,4 +8,6 @@ RUN npm install
 
 COPY . .
 
+RUN npm install -g vite
+
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]  
