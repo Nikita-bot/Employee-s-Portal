@@ -24,20 +24,6 @@ services:
     networks:
       - portal_network
 
-  portal_nginx:
-    container_name: portal_nginx
-    image: nginx:alpine
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - ${NGINX_HTTP_PORT:-8000}:80
-    depends_on:
-      - portal_backend
-      - portal_frontend
-    restart: always
-    networks:
-      - portal_network
-
   portal_backend:
     container_name: portal_backend
     env_file:
@@ -56,33 +42,48 @@ services:
     networks:
       - portal_network
   
-  portal_export:
-    container_name: portal_export
-    restart: always
-    build:
-      context: ./export
-      dockerfile: Dockerfile
-    ports: 
-      - 8081:8081
-    depends_on:
-      - portal_backend
-    networks:
-      - portal_network
+  # portal_export:
+  #   container_name: portal_export
+  #   restart: always
+  #   build:
+  #     context: ./export
+  #     dockerfile: Dockerfile
+  #   ports: 
+  #     - 8081:8081
+  #   depends_on:
+  #     - portal_backend
+  #   networks:
+  #     - portal_network
   
-  portal_frontend:
-    container_name: portal_frontend
-    env_file:
-      - .env
-    restart: always
-    build:
-      context: ./portal-front
-      dockerfile: Dockerfile
-    ports: 
-      - ${HTTP_FRONT_PORT:-3000}:${HTTP_FRONT_DOCKER_PORT:-3000}
-    depends_on:
-      - portal_backend
-    networks:
-      - portal_network
+  # portal_frontend:
+  #   container_name: portal_frontend
+  #   env_file:
+  #     - .env
+  #   restart: always
+  #   build:
+  #     context: ./portal-front
+  #     dockerfile: Dockerfile
+  #   ports: 
+  #     - ${HTTP_FRONT_PORT:-3000}:${HTTP_FRONT_DOCKER_PORT:-3000}
+  #   depends_on:
+  #     - portal_backend
+  #   networks:
+  #     - portal_network
+
+  # portal_nginx:
+  #   container_name: portal_nginx
+  #   image: nginx:alpine
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   ports:
+  #     - ${NGINX_HTTP_PORT:-8000}:80
+  #   depends_on:
+  #     - portal_backend
+  #     - portal_frontend
+  #   restart: always
+  #   networks:
+  #     - portal_network
+
 
 volumes:
   portal_db_data:

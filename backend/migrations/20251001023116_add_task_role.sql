@@ -10,6 +10,8 @@ ALTER TABLE tasks RENAME TO task_list;
 ALTER TABLE user_task RENAME TO tasks;
 
 DROP TABLE IF EXISTS task_department;
+
+
 -- +goose StatementEnd
 
 -- +goose Down

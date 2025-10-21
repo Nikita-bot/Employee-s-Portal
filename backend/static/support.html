@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Техническая поддержка | Городская Больница</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/app/static/css/support.css">
+    <script src="/app/static/js/auth.js"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <header>
+            <div class="logo">Городская Больница</div>
+            <div class="user-menu" onclick="toggleDropdown()">
+                <span>Иванов Александр Сергеевич</span>
+                <img src="https://i.imgur.com/3QZ9a7s.png" alt="Аватар">
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="/profile" class="dropdown-item">Мой профиль</a>
+                    <button class="dropdown-item" onclick="showChangePasswordModal()">Сменить пароль</button>
+                    <button class="dropdown-item" onclick="showTelegramModal()">Привязать Телеграмм</button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" onclick="logout()">Выйти</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <sidebar>
+                <ul class="nav-links">
+                    <li><a href="/">
+                        <i class="fas fa-home"></i>
+                        <span>Главная</span>
+                    </a></li>
+                    <li><a href="/tasks">
+                        <i class="fas fa-tasks"></i>
+                        <span>Задачи</span>
+                    </a></li>
+                    <li><a href="#">
+                        <i class="fas fa-file-alt"></i>
+                        <span>ЭДО</span>
+                    </a></li>
+                    <li><a href="http://documents.kkbsmp.ru/view/list">
+                        <i class="fas fa-book"></i>
+                        <span>База знаний</span>
+                    </a></li>
+                    <li><a href="https://portals.kkbsmp.ru/">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>Порталы</span>
+                    </a></li>
+                    <li><a href="/news">
+                        <i class="fas fa-newspaper"></i>
+                        <span>Новости</span>
+                    </a></li>
+                    <li><a href="/support" class="active">
+                        <i class="fas fa-headset"></i>
+                        <span>Поддержка</span>
+                    </a></li>
+                </ul>
+            </sidebar>
+
+            <main class="content-area">
+                <div class="page-header">
+                    <h1>Техническая поддержка</h1>
+                </div>
+
+                <div class="support-container">
+                    <div class="support-info">
+                        <h3>Создание заявки в техническую поддержку</h3>
+                        <p>Опишите проблему как можно подробнее. В зависимости от типа проблемы могут появиться дополнительные поля для уточнения.</p>
+                    </div>
+
+                    <form id="supportForm">
+                        <div class="form-group">
+                            <label for="problemType">Тип проблемы *</label>
+                            <select id="problemType" required onchange="checkAdditionalFields()">
+                                <option value="">Выберите тип проблемы</option>
+                                <option value="printer">Проблема с принтером/картриджем</option>
+                                <option value="computer">Проблема с компьютером</option>
+                                <option value="software">Проблема с программой/Ариадной</option>
+                                <option value="network">Проблема с сетью/интернетом</option>
+                                <option value="other">Другая проблема</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="problemDescription">Подробное описание *</label>
+                            <textarea id="problemDescription" placeholder="Опишите проблему подробно, укажите что именно не работает, когда началась проблема..." required></textarea>
+                        </div>
+
+
+                        <!-- Дополнительные поля для принтера -->
+                        <div class="additional-fields" id="printerFields" style="display: none;">
+                            <h4>Информация о принтере</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="printerModel">Какой принтер</label>
+                                    <select id="printerModel">
+                                        <option value="">Выберите модель</option>
+                                        <option value="hp-laserjet">HP LaserJet Pro</option>
+                                        <option value="canon-mf">Canon i-SENSYS MF</option>
+                                        <option value="epson-workforce">Epson Workforce</option>
+                                        <option value="xerox-versalink">Xerox VersaLink</option>
+                                        <option value="other">Другая модель</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="printerLocation">Где стоит принтер</label>
+                                    <select id="printerLocation">
+                                        <option value="">Выберите местоположение</option>
+                                        <option value="reception-1">Регистратура 1 этаж</option>
+                                        <option value="reception-2">Регистратура 2 этаж</option>
+                                        <option value="cardiology">Кардиологическое отделение</option>
+                                        <option value="surgery">Хирургическое отделение</option>
+                                        <option value="therapy">Терапевтическое отделение</option>
+                                        <option value="administration">Администрация</option>
+                                        <option value="other">Другое место</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Дополнительные поля для компьютера -->
+                        <div class="additional-fields" id="computerFields" style="display: none;">
+                            <h4>Информация о компьютере</h4>
+                            <div class="form-group">
+                                <label for="computerLocation">Где стоит компьютер</label>
+                                <select id="computerLocation">
+                                    <option value="">Выберите местоположение</option>
+                                    <option value="reception-1">Регистратура 1 этаж</option>
+                                    <option value="reception-2">Регистратура 2 этаж</option>
+                                    <option value="doctor-office-305">Кабинет 305 (Кардиология)</option>
+                                    <option value="doctor-office-412">Кабинет 412 (Хирургия)</option>
+                                    <option value="nurses-station">Пост медсестер</option>
+                                    <option value="administration">Администрация</option>
+                                    <option value="other">Другое место</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Дополнительные поля для программ -->
+                        <div class="additional-fields" id="softwareFields" style="display: none;">
+                            <h4>Информация о программном обеспечении</h4>
+                            <div class="form-group">
+                                <label for="computerName">Имя компьютера *</label>
+                                <input type="text" id="computerName" placeholder="Например: PC-ADMIN-01 или USER-305">
+                            </div>
+                        </div>
+
+                        <div class="urgent-checkbox">
+                            <input type="checkbox" id="urgentRequest">
+                            <label for="urgentRequest">Срочная заявка (критическая проблема)</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitBtn">Создать заявку</button>
+
+                        <div class="success-message" id="successMessage">
+                            Заявка успешно создана! Номер вашей заявки: <strong id="ticketNumber"></strong>
+                        </div>
+                    </form>
+                </div>
+            </main>
+        </div>
+
+        <!-- Модальное окно привязки Telegram -->
+        <div class="modal" id="telegramModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>
+                        Привязка Telegram
+                    </h2>
+                    <button class="close-btn" onclick="closeTelegramModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="instructions">
+                        <h3>Как привязать Telegram:</h3>
+                        
+                        <div class="instruction-step">
+                            <div class="step-number">1</div>
+                            <div class="step-text">
+                                Откройте Telegram и найдите бота <strong>@HospitalPortalBot</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="instruction-step">
+                            <div class="step-number">2</div>
+                            <div class="step-text">
+                                Отправьте боту команду <code>/start</code> для начала работы
+                            </div>
+                        </div>
+                        
+                        <div class="instruction-step">
+                            <div class="step-number">3</div>
+                            <div class="step-text">
+                                Введите код подтверждения, который вам отправил бот
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="verificationCode">Код подтверждения</label>
+                        <input type="text" id="verificationCode" class="code-input" placeholder="ABC123" maxlength="6" oninput="validateVerificationCode()">
+                        <div class="error-message" id="codeError">Неверный код подтверждения</div>
+                        <div class="success-message" id="codeSuccess">Код подтвержден!</div>
+                    </div>
+
+                    <div class="connection-info hidden" id="connectionInfo">
+                        <img src="https://i.imgur.com/3QZ9a7s.png" alt="Аватар Telegram" class="user-avatar">
+                        <div class="user-details">
+                            <h4>Александр Иванов</h4>
+                            <p>@alex_ivanov • Привязан 5 мин назад</p>
+                        </div>
+                    </div>
+
+                    <div class="status-connected" id="statusConnected">
+                        ✅ Telegram успешно привязан! Теперь вы будете получать уведомления о задачах и новостях.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeTelegramModal()">Отмена</button>
+                    <button class="btn btn-primary" id="connectBtn" onclick="connectTelegram()" disabled>Привязать</button>
+                    <button class="btn btn-danger hidden" id="disconnectBtn" onclick="disconnectTelegram()">Отвязать</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно смены пароля -->
+        <div class="modal" id="changePasswordModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Смена пароля</h2>
+                    <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm">
+
+                        <div class="form-group">
+                            <label for="newPassword">Новый пароль</label>
+                            <div class="password-toggle">
+                                <input type="password" id="newPassword" placeholder="Введите новый пароль" oninput="validatePassword()">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('newPassword')">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Подтверждение пароля</label>
+                            <div class="password-toggle">
+                                <input type="password" id="confirmPassword" placeholder="Повторите новый пароль" oninput="validatePassword()">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirmPassword')">👁️</button>
+                            </div>
+                            <div class="error-message" id="confirmPasswordError">Пароли не совпадают</div>
+                        </div>
+
+                        <div class="success-message" id="passwordSuccess">Пароль успешно изменен!</div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeChangePasswordModal()">Отмена</button>
+                    <button class="btn btn-primary" id="savePasswordBtn" onclick="changePassword()" disabled>Сохранить</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2023 Городская Больница. Корпоративная информационная система. Версия 2.1</p>
+        </footer>
+    </div>
+
+    <script>
+        // Функции для dropdown меню
+        function toggleDropdown() {
+            const dropdown = document.getElementById('dropdownMenu');
+            dropdown.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('dropdownMenu');
+            const userMenu = document.querySelector('.user-menu');
+            
+            if (!userMenu.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Функция проверки дополнительных полей
+        function checkAdditionalFields() {
+            const problemType = document.getElementById('problemType').value;
+
+            
+            // Скрываем все дополнительные поля
+            document.getElementById('printerFields').style.display = 'none';
+            document.getElementById('computerFields').style.display = 'none';
+            document.getElementById('softwareFields').style.display = 'none';
+            
+            // Проверяем условия для отображения дополнительных полей
+            if (problemType === 'printer' ) {
+                document.getElementById('printerFields').style.display = 'block';
+            }
+            
+            if (problemType === 'computer' ) {
+                document.getElementById('computerFields').style.display = 'block';
+            }
+            
+            if (problemType === 'software') {
+                document.getElementById('softwareFields').style.display = 'block';
+            }
+        }
+
+        // Обработчик отправки формы
+        document.getElementById('supportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Валидация формы
+            const problemType = document.getElementById('problemType').value;
+            const problemDescription = document.getElementById('problemDescription').value;
+            
+            if (!problemType  || !problemDescription ) {
+                alert('Пожалуйста, заполните все обязательные поля');
+                return;
+            }
+            
+            // Дополнительная валидация для программных проблем
+            if ((problemType === 'software') && 
+                !document.getElementById('computerName').value) {
+                alert('Для программных проблем обязательно укажите имя компьютера');
+                return;
+            }
+            
+            // Создание заявки
+            createSupportTicket();
+        });
+
+        // Функция создания заявки
+        function createSupportTicket() {
+            const ticketNumber = 'T' + Date.now().toString().slice(-6);
+            const isUrgent = document.getElementById('urgentRequest').checked;
+            
+            // Показываем сообщение об успехе
+            document.getElementById('ticketNumber').textContent = ticketNumber;
+            document.getElementById('successMessage').style.display = 'block';
+            
+            // Блокируем кнопку отправки
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').textContent = 'Заявка создана';
+            
+            // В реальном приложении здесь был бы AJAX запрос к серверу
+            console.log('Создана заявка поддержки:', {
+                number: ticketNumber,
+                type: document.getElementById('problemType').value,
+                description: document.getElementById('problemDescription').value,
+                urgent: isUrgent,
+                printerModel: document.getElementById('printerModel').value,
+                printerLocation: document.getElementById('printerLocation').value,
+                computerLocation: document.getElementById('computerLocation').value,
+                computerName: document.getElementById('computerName').value
+            });
+            
+            // Очистка формы через 3 секунды
+            setTimeout(() => {
+                document.getElementById('supportForm').reset();
+                document.getElementById('successMessage').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').textContent = 'Создать заявку';
+                
+                // Скрываем дополнительные поля
+                document.getElementById('printerFields').style.display = 'none';
+                document.getElementById('computerFields').style.display = 'none';
+                document.getElementById('softwareFields').style.display = 'none';
+            }, 5000);
+        }
+
+        // Функции для модального окна Telegram
+        function showTelegramModal() {
+            document.getElementById('telegramModal').classList.add('show');
+            document.getElementById('dropdownMenu').classList.remove('show');
+            resetTelegramForm();
+        }
+
+        function closeTelegramModal() {
+            document.getElementById('telegramModal').classList.remove('show');
+        }
+
+        function resetTelegramForm() {
+            document.getElementById('verificationCode').value = '';
+            document.getElementById('codeError').style.display = 'none';
+            document.getElementById('codeSuccess').style.display = 'none';
+            document.getElementById('connectBtn').disabled = true;
+            document.getElementById('statusConnected').classList.remove('show');
+            document.getElementById('connectionInfo').classList.add('hidden');
+            document.getElementById('disconnectBtn').classList.add('hidden');
+            document.getElementById('connectBtn').classList.remove('hidden');
+        }
+
+        function validateVerificationCode() {
+            const code = document.getElementById('verificationCode').value.toUpperCase();
+            const connectBtn = document.getElementById('connectBtn');
+            
+            // Проверка формата кода (6 символов, буквы и цифры)
+            const isValid = /^[A-Z0-9]{6}$/.test(code);
+            
+            connectBtn.disabled = !isValid;
+            
+            if (code.length === 6 && !isValid) {
+                document.getElementById('codeError').style.display = 'block';
+                document.getElementById('codeSuccess').style.display = 'none';
+            } else if (isValid) {
+                document.getElementById('codeError').style.display = 'none';
+                document.getElementById('codeSuccess').style.display = 'block';
+            } else {
+                document.getElementById('codeError').style.display = 'none';
+                document.getElementById('codeSuccess').style.display = 'none';
+            }
+        }
+
+        function connectTelegram() {
+            const code = document.getElementById('verificationCode').value.toUpperCase();
+            
+            // В реальном приложении здесь был бы AJAX запрос к серверу
+            console.log('Привязка Telegram с кодом:', code);
+            
+            // Демо-логика для презентации
+            if (code === 'ABC123') {
+                // Успешная привязка
+                document.getElementById('statusConnected').classList.add('show');
+                document.getElementById('connectionInfo').classList.remove('hidden');
+                document.getElementById('connectBtn').classList.add('hidden');
+                document.getElementById('disconnectBtn').classList.remove('hidden');
+                
+                // Блокируем поле ввода
+                document.getElementById('verificationCode').disabled = true;
+            } else {
+                // Ошибка привязки
+                document.getElementById('codeError').style.display = 'block';
+                document.getElementById('codeError').textContent = 'Неверный код подтверждения';
+            }
+        }
+
+        function disconnectTelegram() {
+            // В реальном приложении здесь был бы AJAX запрос к серверу
+            console.log('Отвязка Telegram');
+            
+            // Сброс формы
+            resetTelegramForm();
+            document.getElementById('verificationCode').disabled = false;
+            
+            // Показываем сообщение об успешной отвязке
+            alert('Telegram успешно отвязан от вашего аккаунта');
+        }
+
+        // Функции для модального окна смены пароля
+        function showChangePasswordModal() {
+            document.getElementById('changePasswordModal').classList.add('show');
+            document.getElementById('dropdownMenu').classList.remove('show');
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').classList.remove('show');
+            resetPasswordForm();
+        }
+
+        function resetPasswordForm() {
+            document.getElementById('changePasswordForm').reset();
+            document.getElementById('confirmPasswordError').style.display = 'none';
+            document.getElementById('passwordSuccess').style.display = 'none';
+            document.getElementById('savePasswordBtn').disabled = true;
+        }
+
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = field.parentNode.querySelector('.toggle-password');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                button.textContent = '🔒';
+            } else {
+                field.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        function changePassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // В реальном приложении здесь был бы AJAX запрос к серверу
+            console.log('Смена пароля:', {
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            });
+            
+            document.getElementById('passwordSuccess').style.display = 'block';
+            document.getElementById('savePasswordBtn').disabled = true;
+                
+            setTimeout(() => {
+                closeChangePasswordModal();
+            }, 2000);
+        }
+
+        function validatePassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const saveBtn = document.getElementById('savePasswordBtn');
+            const passwordsMatch = newPassword === confirmPassword && newPassword !== '';
+
+            // Показ ошибки подтверждения пароля
+            document.getElementById('confirmPasswordError').style.display = 
+                confirmPassword && !passwordsMatch ? 'block' : 'none';
+            
+            saveBtn.disabled = !(passwordsMatch);
+        }
+
+        // Закрытие модальных окон при клике вне их
+        document.addEventListener('click', function(event) {
+            const telegramModal = document.getElementById('telegramModal');
+            const passwordModal = document.getElementById('changePasswordModal');
+            
+            if (event.target === telegramModal) {
+                closeTelegramModal();
+            }
+            if (event.target === passwordModal) {
+                closeChangePasswordModal();
+            }
+        });
+
+        // Обработка Enter в форме
+        document.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && document.getElementById('telegramModal').classList.contains('show')) {
+                const connectBtn = document.getElementById('connectBtn');
+                if (!connectBtn.disabled) {
+                    connectTelegram();
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

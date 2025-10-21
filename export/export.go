@@ -125,6 +125,7 @@ func processEmployees(conf *config.Config, db *sqlx.DB) {
 		url = fmt.Sprintf(conf.API_URL, dateStr)
 	} else {
 		url = conf.FIRST_API_URL
+		FillDefaultRoles(db)
 	}
 
 	log.Println(url)
@@ -181,6 +182,44 @@ func processEmployees(conf *config.Config, db *sqlx.DB) {
 		}
 	}
 	log.Println("Все новые сотрудники записаны")
+}
+
+func FillDefaultRoles(db *sqlx.DB) error {
+	defaultRoles := []string{
+		"Администратор",
+		"Врач",
+		"Средний_медперсонал",
+		"Младший_медперсонал",
+		"Заведующий",
+		"Начмед_руководитель_начальник",
+		"Программист_ИТ",
+		"Специалист_ИБ",
+		"Техник_ИТ",
+		"Кадровик",
+		"Экономист",
+		"Бухгалтер",
+		"Военком",
+		"ГО_и_ЧС",
+		"Пожарная_безопасность",
+		"Обращение_с_отходами",
+		"Охрана_труда",
+		"Хозяйственная_служба",
+	}
+
+	_, err := db.Exec("DELETE FROM roles")
+	if err != nil {
+		return fmt.Errorf("ошибка очистки таблицы: %v", err)
+	}
+
+	for _, roleName := range defaultRoles {
+		_, err := db.Exec("INSERT INTO roles (name) VALUES ($1)", roleName)
+		if err != nil {
+			return fmt.Errorf("ошибка вставки роли %s: %v", roleName, err)
+		}
+	}
+
+	log.Printf("Успешно добавлено %d стандартных ролей", len(defaultRoles))
+	return nil
 }
 
 func CheckUsersInDB(db *sqlx.DB) (bool, error) {
