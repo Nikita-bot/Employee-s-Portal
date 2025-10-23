@@ -1,13 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { useUserStore } from '@/stores/user.js'
 
 const routes = [
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/Login.vue'),
-    meta: { requiresGuest: true }
-  },
   {
     path: '/',
     name: 'Home',
@@ -15,9 +9,20 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/login',
+    name: 'Login', 
+    component: () => import('@/views/Login.vue')
+  },
+  {
     path: '/tasks',
     name: 'Tasks',
     component: () => import('@/views/Tasks.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/Profile.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -30,12 +35,6 @@ const routes = [
     path: '/support',
     name: 'Support',
     component: () => import('@/views/Support.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: () => import('@/views/Profile.vue'),
     meta: { requiresAuth: true }
   }
 ]
@@ -50,7 +49,7 @@ router.beforeEach((to, from, next) => {
   
   if (to.meta.requiresAuth && !userStore.isAuthenticated) {
     next('/login')
-  } else if (to.meta.requiresGuest && userStore.isAuthenticated) {
+  } else if (to.path === '/login' && userStore.isAuthenticated) {
     next('/')
   } else {
     next()

@@ -1,33 +1,10 @@
 <template>
-  <div class="wrapper">
-    <header>
-      <div class="logo">Городская Больница</div>
-      <div class="user-menu" @click="toggleDropdown">
-        <span>{{ userStore.userData?.name }}</span>
-        <img :src="userStore.userData?.avatar" alt="Аватар">
-        <div class="dropdown-menu" :class="{ show: dropdownOpen }">
-          <router-link to="/profile" class="dropdown-item" @click="closeDropdown">Мой профиль</router-link>
-          <a href="#" class="dropdown-item" @click="closeDropdown">Сменить пароль</a>
-          <a href="#" class="dropdown-item" @click="closeDropdown">Привязать Телеграмм</a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item" @click="logout">Выйти</a>
-        </div>
-      </div>
-    </header>
-
+  <div class="support-wrapper">
+    <AppHeader />
+    
     <div class="main-container">
-      <sidebar>
-        <ul class="nav-links">
-          <li><router-link to="/">Главная</router-link></li>
-          <li><router-link to="/tasks">Задачи</router-link></li>
-          <li><a href="#">ЭДО</a></li>
-          <li><a href="#">База знаний</a></li>
-          <li><a href="#">Порталы</a></li>
-          <li><router-link to="/news">Новости</router-link></li>
-          <li><router-link to="/support" class="active">Поддержка</router-link></li>
-        </ul>
-      </sidebar>
-
+      <AppSidebar />
+      
       <main class="content-area">
         <div class="page-header">
           <h1>Техническая поддержка</h1>
@@ -39,44 +16,31 @@
             <p>Опишите проблему как можно подробнее. В зависимости от типа проблемы могут появиться дополнительные поля для уточнения.</p>
           </div>
 
-          <form @submit.prevent="submitSupportRequest">
+          <form @submit.prevent="submitForm">
             <div class="form-group">
               <label for="problemType">Тип проблемы *</label>
-              <select 
-                id="problemType" 
-                v-model="supportRequest.problemType" 
-                required 
-                @change="checkAdditionalFields"
-              >
+              <select id="problemType" v-model="form.problemType" required @change="checkAdditionalFields">
                 <option value="">Выберите тип проблемы</option>
-                <option value="printer">Проблема с принтером/картриджем</option>
-                <option value="computer">Проблема с компьютером</option>
-                <option value="software">Проблема с программой/Ариадной</option>
-                <option value="network">Проблема с сетью/интернетом</option>
-                <option value="other">Другая проблема</option>
+                <option v-for="task in taskList" :key="task.id" :value="task.id">
+                  {{ task.name }}
+                </option>
               </select>
             </div>
 
             <div class="form-group">
               <label for="problemDescription">Подробное описание *</label>
-              <textarea 
-                id="problemDescription" 
-                v-model="supportRequest.problemDescription"
-                placeholder="Опишите проблему подробно, укажите что именно не работает, когда началась проблема..." 
-                required
-              ></textarea>
+              <textarea id="problemDescription" v-model="form.problemDescription" 
+                        placeholder="Опишите проблему подробно, укажите что именно не работает, когда началась проблема..." 
+                        required></textarea>
             </div>
 
             <!-- Дополнительные поля для принтера -->
-            <div 
-              class="additional-fields" 
-              v-show="showPrinterFields"
-            >
+            <div class="additional-fields" v-show="showPrinterFields">
               <h4>Информация о принтере</h4>
               <div class="form-row">
                 <div class="form-group">
                   <label for="printerModel">Какой принтер</label>
-                  <select id="printerModel" v-model="supportRequest.printerModel">
+                  <select id="printerModel" v-model="form.printerModel">
                     <option value="">Выберите модель</option>
                     <option value="hp-laserjet">HP LaserJet Pro</option>
                     <option value="canon-mf">Canon i-SENSYS MF</option>
@@ -87,7 +51,7 @@
                 </div>
                 <div class="form-group">
                   <label for="printerLocation">Где стоит принтер</label>
-                  <select id="printerLocation" v-model="supportRequest.printerLocation">
+                  <select id="printerLocation" v-model="form.printerLocation">
                     <option value="">Выберите местоположение</option>
                     <option value="reception-1">Регистратура 1 этаж</option>
                     <option value="reception-2">Регистратура 2 этаж</option>
@@ -102,14 +66,11 @@
             </div>
 
             <!-- Дополнительные поля для компьютера -->
-            <div 
-              class="additional-fields" 
-              v-show="showComputerFields"
-            >
+            <div class="additional-fields" v-show="showComputerFields">
               <h4>Информация о компьютере</h4>
               <div class="form-group">
                 <label for="computerLocation">Где стоит компьютер</label>
-                <select id="computerLocation" v-model="supportRequest.computerLocation">
+                <select id="computerLocation" v-model="form.computerLocation">
                   <option value="">Выберите местоположение</option>
                   <option value="reception-1">Регистратура 1 этаж</option>
                   <option value="reception-2">Регистратура 2 этаж</option>
@@ -123,68 +84,64 @@
             </div>
 
             <!-- Дополнительные поля для программ -->
-            <div 
-              class="additional-fields" 
-              v-show="showSoftwareFields"
-            >
+            <div class="additional-fields" v-show="showSoftwareFields">
               <h4>Информация о программном обеспечении</h4>
               <div class="form-group">
                 <label for="computerName">Имя компьютера *</label>
-                <input 
-                  type="text" 
-                  id="computerName" 
-                  v-model="supportRequest.computerName"
-                  placeholder="Например: PC-ADMIN-01 или USER-305"
-                >
+                <input type="text" id="computerName" v-model="form.computerName" 
+                       placeholder="Например: PC-ADMIN-01 или USER-305">
               </div>
             </div>
 
             <div class="urgent-checkbox">
-              <input type="checkbox" id="urgentRequest" v-model="supportRequest.urgent">
+              <input type="checkbox" id="urgentRequest" v-model="form.urgent">
               <label for="urgentRequest">Срочная заявка (критическая проблема)</label>
             </div>
 
-            <button 
-              type="submit" 
-              class="btn btn-primary" 
-              :disabled="submitting"
-            >
-              {{ submitting ? 'Отправка...' : 'Создать заявку' }}
+            <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Отправка...' : 'Создать заявку' }}
             </button>
 
-            <div 
-              class="success-message" 
-              v-show="showSuccessMessage"
-            >
+            <div class="success-message" v-show="showSuccess">
               Заявка успешно создана! Номер вашей заявки: <strong>{{ ticketNumber }}</strong>
+            </div>
+
+            <div class="error-message" v-show="showError">
+              Ошибка при создании заявки: {{ errorMessage }}
             </div>
           </form>
         </div>
       </main>
     </div>
 
-    <footer>
-      <p>© 2023 Городская Больница. Корпоративная информационная система. Версия 2.1</p>
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
+import AppHeader from '@/components/AppHeader.vue'
+import AppSidebar from '@/components/AppSidebar.vue'
+import AppFooter from '@/components/AppFooter.vue'
 
-const router = useRouter()
-const userStore = useUserStore()
-
-// Состояние
-const dropdownOpen = ref(false)
-const submitting = ref(false)
-const showSuccessMessage = ref(false)
+const showPrinterFields = ref(false)
+const showComputerFields = ref(false)
+const showSoftwareFields = ref(false)
+const showSuccess = ref(false)
+const showError = ref(false)
+const isSubmitting = ref(false)
 const ticketNumber = ref('')
+const taskList = ref([])
+const errorMessage = ref('')
 
-// Форма поддержки
-const supportRequest = reactive({
+const userStore = useUserStore()
+const userData = reactive({
+  id: userStore.user.user.id, 
+  branchId: userStore.user.user.employee.branch_id 
+})
+
+const form = reactive({
   problemType: '',
   problemDescription: '',
   printerModel: '',
@@ -194,82 +151,118 @@ const supportRequest = reactive({
   urgent: false
 })
 
-// Вычисляемые свойства для отображения дополнительных полей
-const showPrinterFields = computed(() => {
-  return supportRequest.problemType === 'printer'
-})
-
-const showComputerFields = computed(() => {
-  return supportRequest.problemType === 'computer'
-})
-
-const showSoftwareFields = computed(() => {
-  return supportRequest.problemType === 'software'
-})
-
-// Методы
-const toggleDropdown = () => {
-  dropdownOpen.value = !dropdownOpen.value
-}
-
-const closeDropdown = () => {
-  dropdownOpen.value = false
-}
-
-const logout = () => {
-  userStore.clearUserData()
-  router.push('/login')
-  closeDropdown()
-}
-
 const checkAdditionalFields = () => {
-  // Логика автоматически обрабатывается через computed свойства
+  const selectedTask = taskList.value.find(task => task.id === parseInt(form.problemType))
+  if (!selectedTask) return
+  console.log(selectedTask)
+  const taskName = selectedTask.name.toLowerCase()
+  showPrinterFields.value = taskName.includes('принтер') || taskName.includes('картридж')
+  showComputerFields.value = taskName.includes('компьютер')
+  showSoftwareFields.value = taskName.includes('программ') || taskName.includes('ариадн')
 }
 
-const submitSupportRequest = async () => {
-  // Валидация
-  if (!supportRequest.problemType || !supportRequest.problemDescription) {
-    alert('Пожалуйста, заполните все обязательные поля')
+const buildDescription = () => {
+  let description = form.problemDescription
+
+  if (showPrinterFields.value) {
+    description += `\n\nДополнительная информация о принтере:`
+    if (form.printerModel) description += `\nМодель принтера: ${form.printerModel}`
+    if (form.printerLocation) description += `\nМестоположение: ${form.printerLocation}`
+  }
+
+  if (showComputerFields.value && form.computerLocation) {
+    description += `\n\nМестоположение компьютера: ${form.computerLocation}`
+  }
+
+  if (showSoftwareFields.value && form.computerName) {
+    description += `\n\nИмя компьютера: ${form.computerName}`
+  }
+
+  if (form.urgent) {
+    description += `\n\n!!! СРОЧНАЯ ЗАЯВКА !!!`
+  }
+
+  return description
+}
+
+const submitForm = () => {
+  if (!form.problemType || !form.problemDescription) {
+    showError.value = true
+    errorMessage.value = 'Пожалуйста, заполните все обязательные поля'
     return
   }
 
-  // Дополнительная валидация для программных проблем
-  if (supportRequest.problemType === 'software' && !supportRequest.computerName) {
-    alert('Для программных проблем обязательно укажите имя компьютера')
+  if (showSoftwareFields.value && !form.computerName) {
+    showError.value = true
+    errorMessage.value = 'Для программных проблем обязательно укажите имя компьютера'
     return
   }
 
-  submitting.value = true
+  createSupportTicket()
+}
+
+const createSupportTicket = async () => {
+  isSubmitting.value = true
+  showError.value = false
+
+  const taskData = {
+    task_id: parseInt(form.problemType),
+    executor: 0, // Автоматически выберется
+    initiator: userData.id,
+    description: buildDescription(),
+    status: 0, // Создана
+    priority: form.urgent ? 2 : 1, // Высокий при срочной, иначе средний
+    branch_id: userData.branchId,
+    create_date: new Date().toISOString().split('T')[0]
+  }
 
   try {
-    // Имитация отправки на сервер
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Генерация номера заявки
-    ticketNumber.value = 'T' + Date.now().toString().slice(-6)
-    showSuccessMessage.value = true
-
-    // Логирование данных (в реальном приложении - отправка на сервер)
-    console.log('Создана заявка поддержки:', {
-      number: ticketNumber.value,
-      ...supportRequest,
-      user: userStore.userData?.name
+    const response = await fetch('/api/v1/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(taskData)
     })
 
-    // Сброс формы через 5 секунд
-    setTimeout(() => {
-      resetForm()
-    }, 5000)
-
+    if (response.ok) {
+      ticketNumber.value = 'T' + Date.now().toString().slice(-6)
+      showSuccess.value = true
+      console.log('Заявка создана:', taskData)
+      
+      setTimeout(() => {
+        resetForm()
+      }, 5000)
+    } else {
+      throw new Error('Ошибка сервера: ' + response.status)
+    }
   } catch (error) {
-    alert('Ошибка при создании заявки')
+    showError.value = true
+    errorMessage.value = error.message
+    console.error('Ошибка создания заявки:', error)
   } finally {
-    submitting.value = false
+    isSubmitting.value = false
+  }
+}
+
+const loadTaskList = async () => {
+  try {
+    const response = await fetch('/api/v1/tasks/support')
+    if (response.ok) {
+      const data = await response.json()
+      taskList.value = data.task_list || []
+    } else {
+      throw new Error('Ошибка загрузки списка задач')
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки задач:', error)
+    showError.value = true
+    errorMessage.value = 'Не удалось загрузить список задач'
   }
 }
 
 const resetForm = () => {
-  Object.assign(supportRequest, {
+  Object.assign(form, {
     problemType: '',
     problemDescription: '',
     printerModel: '',
@@ -278,29 +271,55 @@ const resetForm = () => {
     computerName: '',
     urgent: false
   })
-  showSuccessMessage.value = false
-  ticketNumber.value = ''
-}
-
-// Обработчики событий
-const handleClickOutside = (event) => {
-  const userMenu = document.querySelector('.user-menu')
-  if (userMenu && !userMenu.contains(event.target)) {
-    dropdownOpen.value = false
-  }
+  
+  showPrinterFields.value = false
+  showComputerFields.value = false
+  showSoftwareFields.value = false
+  showSuccess.value = false
+  showError.value = false
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+  loadTaskList()
 })
 </script>
 
 <style scoped>
-/* Стили из вашего support.html */
+.support-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  color: #333;
+  line-height: 1.6;
+}
+
+.main-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 0;
+}
+
+.content-area {
+  padding: 2rem;
+  background-color: #fff;
+  min-height: calc(100vh - 140px);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.page-header h1 {
+  font-weight: 300;
+  color: #2c5aa0;
+}
+
 .support-container {
   max-width: 600px;
   margin: 0 auto;
@@ -353,6 +372,29 @@ onUnmounted(() => {
   min-height: 120px;
 }
 
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #2c5aa0;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1e3d6f;
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 .additional-fields {
   background: #f8f9fa;
   padding: 1.5rem;
@@ -392,33 +434,25 @@ onUnmounted(() => {
   margin-top: 1rem;
 }
 
+.error-message {
+  background: #fde8e8;
+  color: #e74c3c;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
 @media (max-width: 768px) {
+  .main-container {
+    grid-template-columns: 1fr;
+  }
+  
   .form-row {
     grid-template-columns: 1fr;
   }
-}
-
-header {
-  background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-}
-
-sidebar {
-  background-color: #2c5aa0;
-  color: white;
-  padding: 2rem 0;
-}
-
-footer {
-  background-color: #1a1a1a;
-  color: #999;
-  text-align: center;
-  padding: 1.5rem;
-  font-size: 0.9rem;
+  
+  .support-container {
+    max-width: 100%;
+  }
 }
 </style>

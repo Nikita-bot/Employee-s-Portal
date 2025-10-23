@@ -31,12 +31,12 @@ func NewUserTaskHandler(s service.UserTaskService, l *zap.Logger, e *echo.Echo) 
 }
 
 func (uh userTaskHandler) Handle() {
-	uh.e.GET("/api/v1/tasks/user/:userId", uh.getAllUserTask)
-	uh.e.GET("/api/v1/tasks/:id", uh.getUserTaskByID)
-	uh.e.POST("/api/v1/tasks", uh.postUserTask)
-	uh.e.PATCH("/api/v1/tasks/:id", uh.patchUserTask)
-	uh.e.PATCH("/api/v1/tasks/executor/:id", uh.patchExecutorToTask)
-	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask)
+	uh.e.GET("/api/v1/tasks/user/:userId", uh.getAllUserTask)        //Получить все задачи пользователя
+	uh.e.GET("/api/v1/tasks/:id", uh.getUserTaskByID)                //Получить задачу по id
+	uh.e.POST("/api/v1/tasks", uh.postUserTask)                      //Создать задачу для пользователя
+	uh.e.PATCH("/api/v1/tasks/:id", uh.patchUserTask)                //Выполнить задачу
+	uh.e.PATCH("/api/v1/tasks/executor/:id", uh.patchExecutorToTask) //Сменить исполнителя задачи
+	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask)              //Удалить задачу
 }
 
 func (uh userTaskHandler) patchExecutorToTask(c echo.Context) error {

@@ -31,10 +31,10 @@ func NewUserHandler(s service.UserService, l *zap.Logger, e *echo.Echo) UserHand
 func (uh userHandler) Handle() {
 	uh.e.POST("/api/v1/auth", uh.Auth)
 	uh.e.GET("/api/v1/user/:id", uh.GetUserByID)
-	uh.e.PATCH("/api/v1/user/pass", uh.PatchEvent)
+	uh.e.PATCH("/api/v1/user/pass", uh.PatchUser)
 }
 
-func (uh userHandler) PatchEvent(c echo.Context) error {
+func (uh userHandler) PatchUser(c echo.Context) error {
 	uh.l.Info("IN USER HANDLER :: CHANGE PASSWORD")
 	type PasswordChangeRequest struct {
 		ID   int    `json:"id" form:"id"`

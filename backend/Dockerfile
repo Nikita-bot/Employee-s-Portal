@@ -17,7 +17,6 @@ RUN apk update --no-cache
 WORKDIR /app
 
 COPY ./log /app/log
-COPY ./static /app/static
 COPY ./migrations /app/migrations
 COPY --from=builder /build/portal /app/portal
 

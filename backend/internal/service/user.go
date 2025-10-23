@@ -11,7 +11,7 @@ import (
 type (
 	UserService interface {
 		Login(login, pass string) (int, error)
-		GetUserByID(id int) (entity.User, error)
+		GetUserByID(id int) (entity.UserMainData, error)
 		ChangePassword(id int, pass string) error
 	}
 	userService struct {
@@ -55,14 +55,14 @@ func (u userService) Login(login, pass string) (int, error) {
 	return id, nil
 }
 
-func (u userService) GetUserByID(id int) (entity.User, error) {
+func (u userService) GetUserByID(id int) (entity.UserMainData, error) {
 	u.l.Debug("IN SERVICE :: GET USER BY ID")
 
-	var user entity.User
+	var user entity.UserMainData
 
 	user, err := u.r.GetUserByID(id)
 	if err != nil {
-		return entity.User{}, errors.New("ERROR WHEN GET USER BY ID")
+		return entity.UserMainData{}, errors.New("ERROR WHEN GET USER BY ID")
 	}
 
 	return user, nil

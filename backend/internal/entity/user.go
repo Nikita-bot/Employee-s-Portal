@@ -24,28 +24,32 @@ type (
 	}
 
 	UserMainData struct {
-		ID         int    `json:"id" db:"id"`
-		Name       string `json:"name" db:"name"`
-		Surname    string `json:"surname" db:"surname"`
-		Patronymic string `json:"patronymic" db:"patronymic"`
-		Department string `json:"department" db:"department"`
+		ID         int      `json:"id" db:"id"`
+		Name       string   `json:"name" db:"name"`
+		Surname    string   `json:"surname" db:"surname"`
+		Patronymic string   `json:"patronymic" db:"patronymic"`
+		Department string   `json:"department" db:"department"`
+		Phone      string   `json:"phone" db:"phone"`
+		Email      string   `json:"email" db:"email"`
+		TgLink     string   `json:"tg_link" db:"tg_link"`
+		TgID       string   `json:"tg_id" db:"tg_id"`
+		Employee   Employee `json:"employee" db:"employee"`
 	}
-	// ПОПРАВИТЬ BRANCH_ID В РЕПОЗИТОРИИ И НА КЛИЕНТЕ
+
 	Employee struct {
-		ID            string       `json:"id" db:"id"`
-		TabNum        string       `json:"tab_num" db:"tab_num"`
-		UserID        int          `json:"user_id" db:"user_id"`
-		Zanyatost     string       `json:"zanyatost" db:"zanyatost"`
-		StartDate     string       `json:"start_date" db:"start_date"`
-		EndDate       string       `json:"end_date" db:"end_date"`
-		Position      string       `json:"position" db:"position"`
-		OtherPosition []Position   `json:"other_position"`
-		DepartmentID  string       `db:"depart_id"`
-		Department    string       `json:"department"`
-		BranchID      int          `json:"branch_id" db:"branch_id"`
-		Branch        string       `json:"branch"`
-		BossID        int          `db:"boss"`
-		Boss          UserMainData `json:"boss"`
+		ID            string     `json:"id" db:"id"`
+		TabNum        string     `json:"tab_num" db:"tab_num"`
+		UserID        int        `json:"user_id" db:"user_id"`
+		Zanyatost     string     `json:"zanyatost" db:"zanyatost"`
+		StartDate     string     `json:"start_date" db:"start_date"`
+		EndDate       string     `json:"end_date" db:"end_date"`
+		Position      string     `json:"position" db:"position"`
+		OtherPosition []Position `json:"other_position"`
+		DepartmentID  string     `db:"depart_id"`
+		Department    string     `json:"department"`
+		BranchID      int        `json:"branch_id" db:"branch_id"`
+		Branch        string     `json:"branch"`
+		BossID        int        `db:"boss"`
 	}
 
 	Position struct {

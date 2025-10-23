@@ -1,19 +1,28 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "esnext",
     "module": "esnext",
-    "baseUrl": "./",
-    "moduleResolution": "node",
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
-    "lib": [
-      "esnext",
-      "dom",
-      "dom.iterable",
-      "scripthost"
-    ]
-  }
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true
+  },
+  "include": [
+    "src/**/*",
+    "src/**/*.vue"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/dist/*"
+  ]
 }

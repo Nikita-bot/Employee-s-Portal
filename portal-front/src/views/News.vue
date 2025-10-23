@@ -1,433 +1,566 @@
 <template>
-  <div class="wrapper">
-    <header>
-      <div class="logo">Городская Больница</div>
-      <div class="user-menu" @click="toggleDropdown">
-        <span>{{ userStore.userData?.name }}</span>
-        <img :src="userStore.userData?.avatar" alt="Аватар">
-        <div class="dropdown-menu" :class="{ show: dropdownOpen }">
-          <router-link to="/profile" class="dropdown-item" @click="closeDropdown">Мой профиль</router-link>
-          <a href="#" class="dropdown-item" @click="closeDropdown">Сменить пароль</a>
-          <a href="#" class="dropdown-item" @click="closeDropdown">Привязать Телеграмм</a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item" @click="logout">Выйти</a>
-        </div>
-      </div>
-    </header>
-
+  <div class="news-wrapper">
+    <AppHeader />
+    
     <div class="main-container">
-      <sidebar>
-        <ul class="nav-links">
-          <li><router-link to="/">Главная</router-link></li>
-          <li><router-link to="/tasks">Задачи</router-link></li>
-          <li><a href="#">ЭДО</a></li>
-          <li><a href="#">База знаний</a></li>
-          <li><a href="#">Порталы</a></li>
-          <li><router-link to="/news" class="active">Новости</router-link></li>
-          <li><router-link to="/support">Поддержка</router-link></li>
-        </ul>
-      </sidebar>
-
+      <AppSidebar />
+      
       <main class="content-area">
         <div class="page-header">
           <h1>Новости и объявления</h1>
+          <div class="news-stats" v-if="!isLoading">
+            Показано {{ startItem }}-{{ endItem }} из {{ filteredNews.length }} новостей
+          </div>
         </div>
 
         <div class="news-controls">
           <button class="btn btn-primary" @click="showCreateNewsModal">Создать новость</button>
-          <input 
-            type="text" 
-            class="search-box" 
-            placeholder="Поиск по новостям..." 
-            v-model="searchQuery"
-            @input="searchNews"
-          >
-          <select class="filter-select" v-model="categoryFilter" @change="filterNews">
-            <option value="all">Все новости</option>
-            <option value="announcement">Объявления</option>
-            <option value="event">События</option>
-            <option value="medical">Медицинские</option>
-            <option value="technical">Технические</option>
-          </select>
-          <select class="filter-select" v-model="dateFilter" @change="filterNews">
+          <input type="text" class="search-box" v-model="searchQuery" placeholder="Поиск по новостям...">
+          <select class="filter-select" v-model="dateFilter" @change="applyFilters">
             <option value="all">За все время</option>
             <option value="today">Сегодня</option>
             <option value="week">За неделю</option>
             <option value="month">За месяц</option>
           </select>
+          <select class="filter-select" v-model="sortBy" @change="applyFilters">
+            <option value="newest">Сначала новые</option>
+            <option value="oldest">Сначала старые</option>
+          </select>
         </div>
 
         <div class="news-grid">
-          <div 
-            v-for="news in filteredNews" 
-            :key="news.id"
-            class="news-card" 
-            :class="{ featured: news.important }"
-          >
+          <div v-for="news in paginatedNews" :key="news.id" 
+               :class="['news-card', { featured: news.important }]">
             <div class="news-card-header">
               <div class="news-meta">
-                <span class="news-date">{{ news.date }}</span>
-                <span class="news-category" :class="`category-${news.category}`">
-                  {{ categoryText[news.category] }}
-                </span>
+                <span class="news-date">{{ formatDate(news.date) }}</span>
               </div>
               <div class="news-title">{{ news.title }}</div>
-              <div class="news-preview">{{ news.preview }}</div>
+              <div class="news-preview">{{ getPreview(news.content) }}</div>
             </div>
             <div class="news-card-body">
-              <div class="news-content">{{ truncateContent(news.content) }}</div>
-              <div v-if="news.attachments.length > 0" class="news-attachments">
-                <a 
-                  v-for="attachment in news.attachments" 
-                  :key="attachment.name"
-                  href="#" 
-                  class="attachment"
-                >
-                  📎 {{ attachment.name }}
+              <div class="news-content">{{ getShortContent(news.content) }}</div>
+              <div v-if="news.attachments && news.attachments.length > 0" class="news-attachments">
+                <a v-for="att in news.attachments" :key="att.name" href="#" class="attachment">
+                  📎 {{ att.name }}
                 </a>
               </div>
             </div>
             <div class="news-card-footer">
-              <span class="news-author">Автор: {{ news.author }}</span>
+              <span class="news-author">Автор: {{ news.author?.name || 'Неизвестный автор' }}</span>
               <span class="read-more" @click="openNewsModal(news.id)">Читать полностью</span>
             </div>
           </div>
+          <div v-if="paginatedNews.length === 0 && !isLoading" class="no-news">
+            Новостей пока нет
+          </div>
+          <div v-if="isLoading" class="loading-news">
+            Загрузка новостей...
+          </div>
         </div>
 
-        <div class="pagination">
-          <button 
-            v-for="page in totalPages" 
-            :key="page"
-            class="page-btn" 
-            :class="{ active: currentPage === page }"
-            @click="changePage(page)"
-          >
+        <!-- Пагинация -->
+        <div class="pagination" v-if="totalPages > 1 && !isLoading">
+          <button class="page-btn" @click="prevPage" :disabled="currentPage === 1">
+            ← Назад
+          </button>
+          
+          <button v-for="page in visiblePages" 
+                  :key="page"
+                  :class="['page-btn', { active: page === currentPage }]"
+                  @click="goToPage(page)">
             {{ page }}
           </button>
-          <button class="page-btn" @click="nextPage">→</button>
+          
+          <button class="page-btn" @click="nextPage" :disabled="currentPage === totalPages">
+            Вперед →
+          </button>
+        </div>
+
+        <div class="pagination-info" v-if="totalPages > 1 && !isLoading">
+          Страница {{ currentPage }} из {{ totalPages }}
         </div>
       </main>
     </div>
 
     <!-- Модальное окно создания новости -->
-    <div class="modal" :class="{ show: showCreateModal }">
-      <div class="modal-content">
+    <div class="modal" :class="{ show: showCreateModal }" @click="closeCreateNewsModal">
+      <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2>Создание новости</h2>
           <button class="close-btn" @click="closeCreateNewsModal">&times;</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="newsTitle">Заголовок новости</label>
-            <input 
-              type="text" 
-              id="newsTitle" 
-              v-model="newNews.title"
-              placeholder="Введите заголовок"
-            >
+            <label for="newsTitle">Заголовок новости *</label>
+            <input type="text" id="newsTitle" v-model="newNews.title" placeholder="Введите заголовок" required>
           </div>
           <div class="form-group">
-            <label for="newsCategory">Категория</label>
-            <select id="newsCategory" v-model="newNews.category">
-              <option value="announcement">Объявление</option>
-              <option value="event">Событие</option>
-              <option value="medical">Медицинская</option>
-              <option value="technical">Техническая</option>
-            </select>
+            <label for="newsContent">Содержание новости *</label>
+            <textarea id="newsContent" v-model="newNews.content" 
+                      placeholder="Подробное содержание новости..." required></textarea>
           </div>
-          <div class="form-group">
-            <label>
-              <input type="checkbox" v-model="newNews.important"> Важная новость
-            </label>
-          </div>
-          <div class="form-group">
-            <label for="newsContent">Содержание новости</label>
-            <textarea 
-              id="newsContent" 
-              v-model="newNews.content"
-              placeholder="Подробное содержание новости..."
-            ></textarea>
+          <div v-if="createError" class="error-message">
+            {{ createError }}
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" @click="closeCreateNewsModal">Отмена</button>
-          <button class="btn btn-primary" @click="createNewNews">Опубликовать</button>
+          <button class="btn btn-primary" @click="createNewNews" :disabled="isCreating">
+            {{ isCreating ? 'Создание...' : 'Опубликовать' }}
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Модальное окно просмотра новости -->
-    <div class="modal" :class="{ show: showViewModal }">
-      <div class="modal-content">
+    <div class="modal" :class="{ show: showNewsModal }" @click="closeNewsModal">
+      <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2>{{ selectedNews?.title }}</h2>
+          <h2>{{ selectedNews.title }}</h2>
           <button class="close-btn" @click="closeNewsModal">&times;</button>
         </div>
         <div class="modal-body">
           <div class="full-news-meta">
-            <span>{{ selectedNews?.date }}</span>
-            <span>{{ categoryText[selectedNews?.category] }}</span>
-            <span>Автор: {{ selectedNews?.author }}</span>
+            <span>{{ formatDate(selectedNews.date) }}</span>
+            <span>Автор: {{ selectedNews.author?.name || 'Неизвестный автор' }}</span>
           </div>
-          <div class="full-news-content" v-html="selectedNews?.content"></div>
-          <div v-if="selectedNews?.attachments.length > 0" class="news-attachments">
+          <div class="full-news-content" v-html="selectedNews.content"></div>
+          <div v-if="selectedNews.attachments && selectedNews.attachments.length > 0" class="news-attachments">
             <h3>Прикрепленные файлы:</h3>
-            <a 
-              v-for="attachment in selectedNews?.attachments" 
-              :key="attachment.name"
-              href="#" 
-              class="attachment"
-            >
-              📎 {{ attachment.name }}
+            <a v-for="att in selectedNews.attachments" :key="att.name" href="#" class="attachment">
+              📎 {{ att.name }}
             </a>
           </div>
         </div>
       </div>
     </div>
 
-    <footer>
-      <p>© 2023 Городская Больница. Корпоративная информационная система. Версия 2.1</p>
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
+import AppHeader from '@/components/AppHeader.vue'
+import AppSidebar from '@/components/AppSidebar.vue'
+import AppFooter from '@/components/AppFooter.vue'
 
-const router = useRouter()
 const userStore = useUserStore()
-
-// Состояние
-const dropdownOpen = ref(false)
 const showCreateModal = ref(false)
-const showViewModal = ref(false)
+const showNewsModal = ref(false)
 const searchQuery = ref('')
-const categoryFilter = ref('all')
 const dateFilter = ref('all')
-const currentPage = ref(1)
-const itemsPerPage = 5
+const sortBy = ref('newest')
+const isLoading = ref(false)
+const isCreating = ref(false)
+const createError = ref('')
 
-// Данные
-const newsData = ref([
-  {
-    id: 1,
-    title: "Обновление регламента электронного документооборота",
-    preview: "С 15 октября вводится новый порядок подписания медицинских документов...",
-    content: `<p>С 15 октября 2023 года в нашей больнице вводится новый порядок подписания медицинских документов с использованием усиленной электронной подписи.</p>
-              <h3>Основные изменения:</h3>
-              <p>Все медицинские документы должны быть подписаны в течение 24 часов с момента создания. Внедряется двухэтапная система проверки для особо важных случаев.</p>
-              <h3>Обучение:</h3>
-              <p>Обязательные обучающие семинары для всех сотрудников пройдут с 10 по 12 октября в конференц-зале главного корпуса.</p>`,
-    date: "05.10.2023",
-    category: "announcement",
-    author: "Администрация",
-    important: true,
-    attachments: [
-      { name: "Новый регламент.pdf", type: "pdf" },
-      { name: "График обучения.xlsx", type: "excel" }
-    ]
-  },
-  {
-    id: 2,
-    title: "Плановые технические работы 15 октября",
-    preview: "15 октября с 22:00 до 02:00 будут проводиться технические работы...",
-    content: `<p>Уважаемые сотрудники! Сообщаем вам о проведении плановых технических работ.</p>
-              <p><strong>Дата и время:</strong> 15 октября 2023 года с 22:00 до 02:00</p>
-              <p><strong>Что будет обновлено:</strong></p>
-              <ul>
-                <li>Система электронного документооборота</li>
-                <li>База данных пациентов</li>
-                <li>Резервное копирование</li>
-              </ul>
-              <p>В указанное время корпоративный портал и смежные системы будут недоступны. Пожалуйста, спланируйте свою работу accordingly.</p>`,
-    date: "03.10.2023",
-    category: "technical",
-    author: "IT-отдел",
-    important: true,
-    attachments: []
-  },
-  {
-    id: 3,
-    title: "Семинар по новым медицинским стандартам в кардиологии",
-    preview: "Приглашаем всех врачей-кардиологов на семинар 12 октября в 14:00...",
-    content: `<p>Приглашаем всех врачей-кардиологов и заинтересованных специалистов на научно-практический семинар.</p>
-              <p><strong>Тема:</strong> "Современные подходы к диагностике и лечению сердечно-сосудистых заболеваний"</p>
-              <p><strong>Дата и время:</strong> 12 октября 2023 года, 14:00</p>
-              <p><strong>Место:</strong> Конференц-зал главного корпуса</p>
-              <p><strong>Спикеры:</strong></p>
-              <ul>
-                <li>Проф. Иванов А.С. - "Инновации в кардиохирургии"</li>
-                <li>Доц. Петрова М.И. - "Новые протоколы медикаментозной терапии"</li>
-                <li>К.м.н. Сидоров В.П. - "Реабилитация кардиологических пациентов"</li>
-              </ul>`,
-    date: "01.10.2023",
-    category: "medical",
-    author: "Научный отдел",
-    important: false,
-    attachments: [
-      { name: "Программа семинара.pdf", type: "pdf" }
-    ]
-  }
-])
+// Пагинация
+const currentPage = ref(1)
+const pageSize = 10 // Новостей на странице
+
+const selectedNews = reactive({
+  id: 0,
+  title: '',
+  content: '',
+  date: '',
+  author: null,
+  attachments: []
+})
 
 const newNews = reactive({
   title: '',
-  category: 'announcement',
   content: '',
-  important: false
 })
 
-const selectedNewsId = ref(null)
+const newsData = ref([])
 
-// Тексты для отображения
-const categoryText = {
-  'announcement': 'Объявление',
-  'event': 'Событие', 
-  'medical': 'Медицинское',
-  'technical': 'Техническое'
+// Загрузка всех новостей с API
+const fetchNews = async () => {
+  isLoading.value = true
+  try {
+    const response = await fetch('/api/v1/news')
+    if (!response.ok) {
+      throw new Error('Ошибка загрузки новостей')
+    }
+    
+    const data = await response.json()
+    newsData.value = data.news || []
+    currentPage.value = 1 // Сбрасываем на первую страницу
+    
+  } catch (error) {
+    console.error('Error fetching news:', error)
+    newsData.value = []
+  } finally {
+    isLoading.value = false
+  }
 }
 
-// Вычисляемые свойства
+// Вычисляемые свойства для фильтрации и пагинации
 const filteredNews = computed(() => {
-  let filtered = newsData.value
-  
-  // Фильтрация по категории
-  if (categoryFilter.value !== 'all') {
-    filtered = filtered.filter(news => news.category === categoryFilter.value)
-  }
-  
+  let filtered = [...newsData.value]
+
   // Поиск
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(news => 
       news.title.toLowerCase().includes(query) ||
-      news.content.toLowerCase().includes(query) ||
-      news.preview.toLowerCase().includes(query)
+      news.content.toLowerCase().includes(query)
     )
   }
-  
-  // Пагинация
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filtered.slice(start, end)
-})
 
-const totalPages = computed(() => {
-  return Math.ceil(newsData.value.length / itemsPerPage)
-})
+  // Фильтрация по дате
+  if (dateFilter.value !== 'all') {
+    const now = new Date()
+    filtered = filtered.filter(news => {
+      if (!news.date) return false
+      
+      const newsDate = new Date(news.date)
+      
+      switch (dateFilter.value) {
+        case 'today':
+          return newsDate.toDateString() === now.toDateString()
+        case 'week':
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          return newsDate >= weekAgo
+        case 'month':
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          return newsDate >= monthAgo
+        default:
+          return true
+      }
+    })
+  }
 
-const selectedNews = computed(() => {
-  return newsData.value.find(news => news.id === selectedNewsId.value)
-})
-
-// Методы
-const toggleDropdown = () => {
-  dropdownOpen.value = !dropdownOpen.value
-}
-
-const closeDropdown = () => {
-  dropdownOpen.value = false
-}
-
-const logout = () => {
-  userStore.clearUserData()
-  router.push('/login')
-  closeDropdown()
-}
-
-const showCreateNewsModal = () => {
-  showCreateModal.value = true
-}
-
-const closeCreateNewsModal = () => {
-  showCreateModal.value = false
-  Object.assign(newNews, {
-    title: '',
-    category: 'announcement',
-    content: '',
-    important: false
+  // Сортировка
+  filtered.sort((a, b) => {
+    const dateA = new Date(a.date || 0)
+    const dateB = new Date(b.date || 0)
+    
+    if (sortBy.value === 'newest') {
+      return dateB - dateA
+    } else {
+      return dateA - dateB
+    }
   })
-}
 
-const createNewNews = () => {
-  if (newNews.title && newNews.content) {
-    const news = {
-      id: newsData.value.length + 1,
-      title: newNews.title,
-      preview: newNews.content.substring(0, 100) + '...',
-      content: newNews.content,
-      date: new Date().toLocaleDateString('ru-RU'),
-      category: newNews.category,
-      author: userStore.userData?.name,
-      important: newNews.important,
-      attachments: []
+  return filtered
+})
+
+// Пагинация
+const totalPages = computed(() => Math.ceil(filteredNews.value.length / pageSize))
+
+const startItem = computed(() => {
+  return (currentPage.value - 1) * pageSize + 1
+})
+
+const endItem = computed(() => {
+  const end = currentPage.value * pageSize
+  return end > filteredNews.value.length ? filteredNews.value.length : end
+})
+
+const paginatedNews = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return filteredNews.value.slice(start, end)
+})
+
+// Видимые страницы в пагинации
+const visiblePages = computed(() => {
+  const pages = []
+  const total = totalPages.value
+  const current = currentPage.value
+  
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    let start = Math.max(1, current - 2)
+    let end = Math.min(total, current + 2)
+    
+    if (current <= 3) {
+      end = 5
+    } else if (current >= total - 2) {
+      start = total - 4
     }
     
-    newsData.value.unshift(news)
-    closeCreateNewsModal()
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+  }
+  
+  return pages
+})
+
+// Методы пагинации
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
-const openNewsModal = (newsId) => {
-  selectedNewsId.value = newsId
-  showViewModal.value = true
-}
-
-const closeNewsModal = () => {
-  showViewModal.value = false
-  selectedNewsId.value = null
-}
-
-const searchNews = () => {
-  currentPage.value = 1 // Сброс пагинации при поиске
-}
-
-const filterNews = () => {
-  currentPage.value = 1 // Сброс пагинации при фильтрации
-}
-
-const changePage = (page) => {
-  currentPage.value = page
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
-const truncateContent = (content) => {
-  // Удаляем HTML теги для превью
+const applyFilters = () => {
+  currentPage.value = 1 // Сбрасываем на первую страницу при изменении фильтров
+}
+
+const getShortContent = (content) => {
+  if (!content) return 'Нет содержания'
   const text = content.replace(/<[^>]*>/g, '')
-  return text.length > 150 ? text.substring(0, 150) + '...' : text
+  return text.substring(0, 150) + '...'
 }
 
-// Обработчики событий
-const handleClickOutside = (event) => {
-  const userMenu = document.querySelector('.user-menu')
-  if (userMenu && !userMenu.contains(event.target)) {
-    dropdownOpen.value = false
+const getPreview = (content) => {
+  if (!content) return 'Нет содержания'
+  const text = content.replace(/<[^>]*>/g, '')
+  return text.length > 100 ? text.substring(0, 100) + '...' : text
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'Дата не указана'
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  } catch {
+    return 'Неверная дата'
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
+// Модальные окна
+const showCreateNewsModal = () => {
+  showCreateModal.value = true
+  createError.value = ''
+}
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+const closeCreateNewsModal = () => {
+  showCreateModal.value = false
+  newNews.title = ''
+  newNews.content = ''
+  createError.value = ''
+}
+
+const createNewNews = async () => {
+  if (!newNews.title || !newNews.content) {
+    createError.value = 'Пожалуйста, заполните все обязательные поля'
+    return
+  }
+
+  isCreating.value = true
+  createError.value = ''
+
+  try {
+    const response = await fetch('/api/v1/news', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: newNews.title,
+        content: newNews.content
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Ошибка создания новости')
+    }
+
+    // Обновляем список новостей
+    await fetchNews()
+    closeCreateNewsModal()
+    
+  } catch (error) {
+    console.error('Error creating news:', error)
+    createError.value = error.message || 'Ошибка при создании новости'
+  } finally {
+    isCreating.value = false
+  }
+}
+
+const openNewsModal = (newsId) => {
+  const news = newsData.value.find(n => n.id === newsId)
+  if (news) {
+    Object.assign(selectedNews, news)
+    showNewsModal.value = true
+  }
+}
+
+const closeNewsModal = () => {
+  showNewsModal.value = false
+}
+
+// Загружаем новости при монтировании компонента
+onMounted(() => {
+  fetchNews()
 })
 </script>
 
 <style scoped>
-/* Стили из вашего news.html */
+/* Стили для пагинации */
+.news-stats {
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e1e5e9;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  min-width: 44px;
+  text-align: center;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #2c5aa0;
+}
+
+.page-btn.active {
+  background: #2c5aa0;
+  color: white;
+  border-color: #2c5aa0;
+}
+
+.page-btn:disabled {
+  background: #f8f9fa;
+  color: #999;
+  cursor: not-allowed;
+  border-color: #e1e5e9;
+}
+
+.pagination-info {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+/* Остальные стили */
+.error-message {
+  background: #ffe6e6;
+  color: #d63031;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.no-news, .loading-news {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+  font-style: italic;
+  grid-column: 1 / -1;
+}
+
+.news-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  color: #333;
+  line-height: 1.6;
+}
+
+.main-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 0;
+}
+
+.content-area {
+  padding: 2rem;
+  background-color: #fff;
+  min-height: calc(100vh - 140px);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.page-header h1 {
+  font-weight: 300;
+  color: #2c5aa0;
+}
+
 .news-controls {
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
   align-items: center;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #2c5aa0;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1e3d6f;
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.filter-select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  min-width: 150px;
 }
 
 .search-box {
@@ -478,33 +611,6 @@ onUnmounted(() => {
   color: #666;
   font-size: 0.9rem;
   font-weight: 500;
-}
-
-.news-category {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.category-announcement {
-  background: #e3f2fd;
-  color: #2c5aa0;
-}
-
-.category-event {
-  background: #fff3e0;
-  color: #f39c12;
-}
-
-.category-medical {
-  background: #e8f5e8;
-  color: #27ae60;
-}
-
-.category-technical {
-  background: #f3e5f5;
-  color: #9c27b0;
 }
 
 .news-title {
@@ -579,33 +685,56 @@ onUnmounted(() => {
   text-decoration: underline;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
   align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e1e5e9;
+  justify-content: center;
 }
 
-.page-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
   background: white;
-  border-radius: 6px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e1e5e9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  color: #2c5aa0;
+  font-weight: 500;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  color: #666;
 }
 
-.page-btn.active {
-  background: #2c5aa0;
-  color: white;
-  border-color: #2c5aa0;
-}
-
-.page-btn:hover:not(.active) {
-  background: #f8f9fa;
+.modal-body {
+  padding: 1.5rem;
 }
 
 .full-news-meta {
@@ -632,47 +761,79 @@ onUnmounted(() => {
   margin-bottom: 1rem;
 }
 
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e1e5e9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #2c5aa0;
+  color: #2c5aa0;
+}
+
 @media (max-width: 768px) {
+  .main-container {
+    grid-template-columns: 1fr;
+  }
+  
   .news-controls {
     flex-direction: column;
     align-items: stretch;
   }
+  
   .search-box {
     max-width: none;
   }
+  
   .news-meta {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
+  
   .full-news-meta {
     flex-direction: column;
     gap: 0.5rem;
   }
+  
+  .pagination {
+    gap: 0.25rem;
+  }
+  
+  .page-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    min-width: 40px;
+  }
 }
-
-header {
-  background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-}
-
-sidebar {
-  background-color: #2c5aa0;
-  color: white;
-  padding: 2rem 0;
-}
-
-footer {
-  background-color: #1a1a1a;
-  color: #999;
-  text-align: center;
-  padding: 1.5rem;
-  font-size: 0.9rem;
-}
-
 </style>

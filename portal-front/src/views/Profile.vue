@@ -1,33 +1,10 @@
 <template>
-  <div class="wrapper">
-    <header>
-      <div class="logo">Городская Больница</div>
-      <div class="user-menu" @click="toggleDropdown">
-        <span>{{ userStore.userData?.name }}</span>
-        <img :src="userStore.userData?.avatar" alt="Аватар">
-        <div class="dropdown-menu" :class="{ show: dropdownOpen }">
-          <router-link to="/profile" class="dropdown-item" @click="closeDropdown">Мой профиль</router-link>
-          <a href="#" class="dropdown-item" @click="closeDropdown">Сменить пароль</a>
-          <a href="#" class="dropdown-item" @click="closeDropdown">Привязать Телеграмм</a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item" @click="logout">Выйти</a>
-        </div>
-      </div>
-    </header>
-
+  <div class="profile-wrapper">
+    <AppHeader />
+    
     <div class="main-container">
-      <sidebar>
-        <ul class="nav-links">
-          <li><router-link to="/">Главная</router-link></li>
-          <li><router-link to="/tasks">Задачи</router-link></li>
-          <li><a href="#">ЭДО</a></li>
-          <li><a href="#">База знаний</a></li>
-          <li><a href="#">Порталы</a></li>
-          <li><router-link to="/news">Новости</router-link></li>
-          <li><router-link to="/support">Поддержка</router-link></li>
-        </ul>
-      </sidebar>
-
+      <AppSidebar />
+      
       <main class="content-area">
         <div class="page-header">
           <h1>Мой профиль</h1>
@@ -36,11 +13,11 @@
         <div class="profile-container">
           <!-- Шапка профиля -->
           <div class="profile-header">
-            <img :src="userStore.userData?.avatar" alt="Аватар" class="avatar-large">
+            <img :src="user.avatar" alt="Аватар" class="avatar-large">
             <div class="profile-info">
-              <h2>{{ userStore.userData?.name }}</h2>
-              <div class="profile-position">{{ userStore.userData?.position }}</div>
-              <div class="profile-department">{{ userStore.userData?.department }}</div>
+              <h2>{{ user.name }}</h2>
+              <div class="profile-position">{{ user.position }}</div>
+              <div class="profile-department">{{ user.department }}</div>
             </div>
           </div>
 
@@ -55,23 +32,23 @@
               <div class="section-body">
                 <div class="info-item">
                   <span class="info-label">Дата рождения:</span>
-                  <span class="info-value">15.03.1980</span>
+                  <span class="info-value">{{ user.birthDate }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Телефон:</span>
-                  <span class="info-value">+7 (912) 345-67-89</span>
+                  <span class="info-value">{{ user.phone }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Email:</span>
-                  <span class="info-value">a.ivanov@hospital.ru</span>
+                  <span class="info-value">{{ user.email }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Кабинет:</span>
-                  <span class="info-value">305</span>
+                  <span class="info-value">{{ user.office }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Стаж работы:</span>
-                  <span class="info-value">15 лет</span>
+                  <span class="info-value">{{ user.experience }}</span>
                 </div>
               </div>
             </div>
@@ -85,23 +62,23 @@
               <div class="section-body">
                 <div class="info-item">
                   <span class="info-label">Отдел:</span>
-                  <span class="info-value">Кардиология</span>
+                  <span class="info-value">{{ user.department }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Должность:</span>
-                  <span class="info-value">Ведущий специалист</span>
+                  <span class="info-value">{{ user.position }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Категория:</span>
-                  <span class="info-value">Высшая</span>
+                  <span class="info-value">{{ user.category }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Ученая степень:</span>
-                  <span class="info-value">Кандидат медицинских наук</span>
+                  <span class="info-value">{{ user.degree }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Дата приема:</span>
-                  <span class="info-value">10.08.2008</span>
+                  <span class="info-value">{{ user.hireDate }}</span>
                 </div>
               </div>
             </div>
@@ -114,15 +91,15 @@
               <div class="section-body">
                 <div class="stats-grid">
                   <div class="stat-card">
-                    <div class="stat-number">42</div>
+                    <div class="stat-number">{{ stats.appointments }}</div>
                     <div class="stat-label">Приемов</div>
                   </div>
                   <div class="stat-card">
-                    <div class="stat-number">18</div>
+                    <div class="stat-number">{{ stats.operations }}</div>
                     <div class="stat-label">Операций</div>
                   </div>
                   <div class="stat-card">
-                    <div class="stat-number">96%</div>
+                    <div class="stat-number">{{ stats.successRate }}</div>
                     <div class="stat-label">Успешность</div>
                   </div>
                 </div>
@@ -137,19 +114,19 @@
               <div class="section-body">
                 <div class="info-item">
                   <span class="info-label">ЭЦП:</span>
-                  <span class="info-value">Активна до 15.12.2024</span>
+                  <span class="info-value">{{ security.ecp }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Telegram:</span>
-                  <span class="info-value">Привязан</span>
+                  <span class="info-value">{{ security.telegram }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Последний вход:</span>
-                  <span class="info-value">Сегодня, {{ currentTime }}</span>
+                  <span class="info-value">{{ security.lastLogin }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Двухфакторная аутентификация:</span>
-                  <span class="info-value">Включена</span>
+                  <span class="info-value">{{ security.twoFactor }}</span>
                 </div>
               </div>
             </div>
@@ -159,7 +136,7 @@
           <div class="calendar-section">
             <div class="section-header">
               <h3>Календарь</h3>
-              <button class="edit-btn" @click="showFullCalendar">Просмотреть все</button>
+              <button class="edit-btn" @click="showCalendar">Просмотреть все</button>
             </div>
             <div class="calendar-header">
               <span>{{ currentMonth }}</span>
@@ -169,17 +146,12 @@
               </div>
             </div>
             <div class="calendar-grid">
-              <div 
-                v-for="day in calendarDays" 
-                :key="day.date"
-                class="calendar-day" 
-                :class="{
-                  'header': day.isHeader,
-                  'other-month': !day.isCurrentMonth,
-                  'today': day.isToday
-                }"
-              >
-                {{ day.display }}
+              <div v-for="day in calendar.daysOfWeek" :key="day" class="calendar-day header">
+                {{ day }}
+              </div>
+              <div v-for="day in calendar.days" :key="day.number" 
+                   :class="['calendar-day', day.class]">
+                {{ day.number }}
                 <div v-if="day.event" class="calendar-event">{{ day.event }}</div>
               </div>
             </div>
@@ -196,13 +168,13 @@
                 <small>Здесь будет отображаться ваша активность и статистика</small>
               </div>
               <div class="quick-actions">
-                <router-link to="/tasks" class="action-btn">
+                <a href="#" class="action-btn">
                   <div class="action-icon">📋</div>
                   <div class="action-text">
                     <h4>Мои отчеты</h4>
                     <p>Просмотр и создание отчетов</p>
                   </div>
-                </router-link>
+                </a>
                 <router-link to="/tasks" class="action-btn">
                   <div class="action-icon">✅</div>
                   <div class="action-text">
@@ -232,11 +204,11 @@
     </div>
 
     <!-- Модальное окно редактирования личной информации -->
-    <div class="modal" :class="{ show: showPersonalModal }">
-      <div class="modal-content">
+    <div class="modal" :class="{ show: showPersonalModal }" @click="closeEditPersonalModal">
+      <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2>Редактирование личной информации</h2>
-          <button class="close-btn" @click="closePersonalModal">&times;</button>
+          <button class="close-btn" @click="closeEditPersonalModal">&times;</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -249,108 +221,89 @@
           </div>
           <div class="form-group">
             <label for="editCabinet">Кабинет</label>
-            <input type="text" id="editCabinet" v-model="editForm.cabinet">
+            <input type="text" id="editCabinet" v-model="editForm.office">
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="closePersonalModal">Отмена</button>
+          <button class="btn btn-outline" @click="closeEditPersonalModal">Отмена</button>
           <button class="btn btn-primary" @click="savePersonalInfo">Сохранить</button>
         </div>
       </div>
     </div>
 
-    <footer>
-      <p>© 2023 Городская Больница. Корпоративная информационная система. Версия 2.1</p>
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import AppHeader from '@/components/AppHeader.vue'
+import AppSidebar from '@/components/AppSidebar.vue'
+import AppFooter from '@/components/AppFooter.vue'
 
 const router = useRouter()
-const userStore = useUserStore()
-
-// Состояние
-const dropdownOpen = ref(false)
 const showPersonalModal = ref(false)
 
-// Форма редактирования
-const editForm = reactive({
+const user = reactive({
+  name: 'Иванов Александр Сергеевич',
+  avatar: '/default-avatar.png',
+  position: 'Врач-кардиолог высшей категории',
+  department: 'Кардиологическое отделение',
+  birthDate: '15.03.1980',
   phone: '+7 (912) 345-67-89',
   email: 'a.ivanov@hospital.ru',
-  cabinet: '305'
+  office: '305',
+  experience: '15 лет',
+  category: 'Высшая',
+  degree: 'Кандидат медицинских наук',
+  hireDate: '10.08.2008'
 })
 
-// Вычисляемые свойства
-const currentTime = computed(() => {
-  return new Date().toLocaleTimeString('ru-RU', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  })
+const stats = reactive({
+  appointments: 42,
+  operations: 18,
+  successRate: '96%'
+})
+
+const security = reactive({
+  ecp: 'Активна до 15.12.2024',
+  telegram: 'Привязан',
+  lastLogin: 'Сегодня, 10:30',
+  twoFactor: 'Включена'
+})
+
+const editForm = reactive({
+  phone: user.phone,
+  email: user.email,
+  office: user.office
+})
+
+const calendar = reactive({
+  daysOfWeek: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+  days: [
+    { number: 1, class: 'other-month' }, { number: 2, class: 'other-month' }, 
+    { number: 3, class: 'other-month' }, { number: 4, class: 'other-month' }, 
+    { number: 5, class: 'other-month' }, { number: 6, class: 'today', event: 'Прием 10:00' },
+    { number: 7, class: '' }, { number: 8, class: '' }, { number: 9, class: '' }, 
+    { number: 10, class: '' }, { number: 11, class: '' }, { number: 12, class: '', event: 'Семинар 14:00' },
+    { number: 13, class: '' }, { number: 14, class: '' }, { number: 15, class: '', event: 'Консилиум 11:00' },
+    // ... остальные дни
+  ]
 })
 
 const currentMonth = computed(() => {
-  return new Date().toLocaleDateString('ru-RU', { 
-    month: 'long', 
-    year: 'numeric' 
-  })
+  return new Date().toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
 })
-
-const calendarDays = computed(() => {
-  const days = []
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth()
-  
-  // Заголовки дней недели
-  const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-  daysOfWeek.forEach(day => {
-    days.push({ display: day, isHeader: true })
-  })
-  
-  // Дни месяца (демо-данные)
-  for (let i = 1; i <= 31; i++) {
-    const isToday = i === today.getDate()
-    let event = ''
-    
-    if (i === 6) event = 'Прием 10:00'
-    else if (i === 12) event = 'Семинар 14:00'
-    else if (i === 15) event = 'Консилиум 11:00'
-    
-    days.push({ 
-      display: i, 
-      isCurrentMonth: true,
-      isToday,
-      event
-    })
-  }
-  
-  return days
-})
-
-// Методы
-const toggleDropdown = () => {
-  dropdownOpen.value = !dropdownOpen.value
-}
-
-const closeDropdown = () => {
-  dropdownOpen.value = false
-}
-
-const logout = () => {
-  userStore.clearUserData()
-  router.push('/login')
-  closeDropdown()
-}
 
 const editPersonalInfo = () => {
+  editForm.phone = user.phone
+  editForm.email = user.email
+  editForm.office = user.office
   showPersonalModal.value = true
 }
 
-const closePersonalModal = () => {
+const closeEditPersonalModal = () => {
   showPersonalModal.value = false
 }
 
@@ -358,34 +311,55 @@ const editProfessionalInfo = () => {
   alert('Редактирование профессиональной информации')
 }
 
-const showFullCalendar = () => {
+const showCalendar = () => {
   alert('Открытие полного календаря')
 }
 
 const savePersonalInfo = () => {
+  user.phone = editForm.phone
+  user.email = editForm.email
+  user.office = editForm.office
   alert('Личная информация сохранена')
-  closePersonalModal()
+  closeEditPersonalModal()
 }
-
-// Обработчики событий
-const handleClickOutside = (event) => {
-  const userMenu = document.querySelector('.user-menu')
-  if (userMenu && !userMenu.contains(event.target)) {
-    dropdownOpen.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 </script>
 
 <style scoped>
-/* Стили из вашего profile.html */
+.profile-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  color: #333;
+  line-height: 1.6;
+}
+
+.main-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 0;
+}
+
+.content-area {
+  padding: 2rem;
+  background-color: #fff;
+  min-height: calc(100vh - 140px);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.page-header h1 {
+  font-weight: 300;
+  color: #2c5aa0;
+}
+
 .profile-container {
   max-width: 1000px;
   margin: 0 auto;
@@ -661,52 +635,171 @@ onUnmounted(() => {
   font-size: 0.85rem;
 }
 
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e1e5e9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-header h2 {
+  color: #2c5aa0;
+  font-weight: 500;
+  font-size: 1.25rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.close-btn:hover {
+  background: #e9ecef;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #2c5aa0;
+  box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e1e5e9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  min-width: 100px;
+}
+
+.btn-primary {
+  background: #2c5aa0;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1e3d6f;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #2c5aa0;
+  color: #2c5aa0;
+}
+
+.btn-outline:hover {
+  background: #2c5aa0;
+  color: white;
+}
+
 @media (max-width: 768px) {
+  .main-container {
+    grid-template-columns: 1fr;
+  }
+  
   .profile-grid {
     grid-template-columns: 1fr;
   }
+  
   .profile-header {
     flex-direction: column;
     text-align: center;
     gap: 1rem;
   }
+  
   .stats-grid {
     grid-template-columns: 1fr;
   }
+  
   .analytics-grid {
     grid-template-columns: 1fr;
   }
+  
   .calendar-grid {
     grid-template-columns: repeat(7, 1fr);
     font-size: 0.8rem;
   }
+  
   .calendar-day {
     min-height: 60px;
     padding: 0.5rem;
   }
-}
-
-header {
-  background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-}
-
-sidebar {
-  background-color: #2c5aa0;
-  color: white;
-  padding: 2rem 0;
-}
-
-footer {
-  background-color: #1a1a1a;
-  color: #999;
-  text-align: center;
-  padding: 1.5rem;
-  font-size: 0.9rem;
 }
 </style>

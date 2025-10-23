@@ -18,7 +18,7 @@ type (
 		CreatePassword(login, pass string) error
 		ChangeUserPassword(userID int, newPassword string) error
 		GetUserByLogin(login string) (int, error)
-		GetUserByID(id int) (entity.User, error)
+		GetUserByID(id int) (entity.UserMainData, error)
 	}
 
 	userRepo struct {
@@ -172,10 +172,10 @@ func (u userRepo) GetBranchByUserID(id int) entity.Branch {
 
 }
 
-func (u userRepo) GetUserByID(id int) (entity.User, error) {
+func (u userRepo) GetUserByID(id int) (entity.UserMainData, error) {
 	u.l.Debug("IN USER REPO :: GET USER BY ID ")
 
-	var user entity.User
+	var user entity.UserMainData
 
 	cacheKey := fmt.Sprintf("user:%d", id)
 
@@ -194,13 +194,6 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 			u.name,
 			u.surname,
 			u.patronymic,
-			u.snyls,
-			u.pasport_ser,
-			u.pasport_num,
-			u.pasport_date,
-			u.pasport_dep,
-			u.pasport_dep_key,
-			u.adress,
 			u.phone,
 			u.email,
 			u.tg_link,
@@ -227,19 +220,14 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 	err := u.db.Get(&user, query, id)
 	if err != nil {
 		u.l.Error(err.Error())
-		return entity.User{}, err
+		return entity.UserMainData{}, err
 	}
 
 	user.Employee.OtherPosition = []entity.Position{}
-	user.Roles = []entity.Role{}
 	department := u.GetDepartmentByUserID(user.ID)
 	user.Employee.Department = department.Name
 	branch := u.GetBranchByUserID(user.ID)
 	user.Employee.Branch = branch.Name
-	boss := u.GetUserBoss(user.Employee.BossID)
-	user.Employee.Boss = boss
-	roles := u.GetUserRoles(user.ID)
-	user.Roles = roles
 	positions := u.GetAllUserPosition(user.ID)
 	user.Employee.OtherPosition = append(user.Employee.OtherPosition, positions...)
 
@@ -250,22 +238,22 @@ func (u userRepo) GetUserByID(id int) (entity.User, error) {
 	return user, nil
 }
 
-func (r userRepo) GetUserBoss(userID int) entity.UserMainData {
+// func (r userRepo) GetUserBoss(userID int) entity.UserMainData {
 
-	var boss entity.UserMainData
+// 	var boss entity.UserMainData
 
-	query := `
-		SELECT u.name, u.surname, u.patronymic
-		FROM users u
-		WHERE u.id = $1
-	`
-	err := r.db.Get(&boss, query, userID)
-	if err != nil {
-		return entity.UserMainData{}
-	}
+// 	query := `
+// 		SELECT u.name, u.surname, u.patronymic
+// 		FROM users u
+// 		WHERE u.id = $1
+// 	`
+// 	err := r.db.Get(&boss, query, userID)
+// 	if err != nil {
+// 		return entity.UserMainData{}
+// 	}
 
-	return boss
-}
+// 	return boss
+// }
 
 func (r userRepo) GetAllUserPosition(userID int) []entity.Position {
 	r.l.Info("IN USER REPO :: GET USER`S POSITION")

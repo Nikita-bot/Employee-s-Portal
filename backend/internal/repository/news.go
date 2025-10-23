@@ -46,6 +46,7 @@ func (r newsRepo) GetAll() ([]entity.News, error) {
 			users u ON n.author=u.id 
         ORDER BY 
 			n.date DESC
+		LIMIT 100
     `
 	err := r.db.Select(&n, query)
 	if err != nil {

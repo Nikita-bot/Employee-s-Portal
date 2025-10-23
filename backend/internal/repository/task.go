@@ -71,8 +71,7 @@ func (tr taskRepo) GetIT() ([]entity.Task, error) {
 	query := `
 		SELECT t.id, t.name, t.type
 		from tasks t
-		join task_department td on td.task_id = t.id
-		WHERE td.department_id = 449
+		WHERE t.type = 'support'
 	`
 
 	err := tr.db.Select(&tl, query)
