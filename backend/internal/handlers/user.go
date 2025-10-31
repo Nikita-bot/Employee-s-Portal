@@ -32,6 +32,28 @@ func (uh userHandler) Handle() {
 	uh.e.POST("/api/v1/auth", uh.Auth)
 	uh.e.GET("/api/v1/user/:id", uh.GetUserByID)
 	uh.e.PATCH("/api/v1/user/pass", uh.PatchUser)
+	uh.e.PATCH("/api/v1/user/tg", uh.PatchUserTG)
+}
+
+func (uh userHandler) PatchUserTG(c echo.Context) error {
+	uh.l.Info("IN USER HANDLER :: CHANGE TG")
+	type TGChangeRequest struct {
+		ID int    `json:"user_id" form:"user_id"`
+		TG string `json:"tg" form:"tg"`
+	}
+
+	var req TGChangeRequest
+
+	req.ID, _ = strconv.Atoi(c.FormValue("user_id"))
+	req.TG = c.FormValue("tg")
+
+	uh.l.Debug("Request: ", zap.Any("req:", req))
+
+	err := uh.s.SetTG(req.ID, req.TG)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "failed to change tg")
+	}
+	return c.JSON(http.StatusOK, "Ok")
 }
 
 func (uh userHandler) PatchUser(c echo.Context) error {

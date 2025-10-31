@@ -211,7 +211,7 @@ const createSupportTicket = async () => {
     initiator: userData.id,
     description: buildDescription(),
     status: 0, // Создана
-    priority: form.urgent ? 2 : 1, // Высокий при срочной, иначе средний
+    priority: form.urgent ? 3 : 2, // Высокий при срочной, иначе средний
     branch_id: userData.branchId,
     create_date: new Date().toISOString().split('T')[0]
   }

@@ -19,6 +19,8 @@ type (
 		ChangeUserPassword(userID int, newPassword string) error
 		GetUserByLogin(login string) (int, error)
 		GetUserByID(id int) (entity.UserMainData, error)
+
+		SetTG(id int, tg string) error
 	}
 
 	userRepo struct {
@@ -34,6 +36,44 @@ func NewUserRepo(db *sqlx.DB, l *zap.Logger, r *redis.Client) UserRepository {
 		l:  l,
 		r:  r,
 	}
+}
+
+func (u userRepo) SetTG(id int, tg string) error {
+	u.l.Debug("IN USER REPO :: SET TG")
+
+	tgLink := fmt.Sprintf("tg://user?id=%s", tg)
+
+	query := `
+		UPDATE users SET tg_id = $1, tg_link = $2 WHERE id = $3
+	`
+
+	_, err := u.db.Exec(query, tg, tgLink, id)
+	if err != nil {
+		u.l.Error(err.Error())
+		return err
+
+	}
+	// https://t.me/c/575690682
+	// tg://user?id=575690682
+
+	var user entity.UserMainData
+
+	cacheKey := fmt.Sprintf("user:%d", id)
+
+	if data, err := u.r.Get(context.Background(), cacheKey).Bytes(); err == nil {
+		if err := json.Unmarshal(data, &user); err == nil {
+			u.l.Debug("Пользователь найден в Кеше")
+
+			user.TgID = tg
+			user.TgLink = tgLink
+
+			if data, err := json.Marshal(user); err == nil {
+				u.r.Set(context.Background(), cacheKey, data, time.Hour)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (u userRepo) Login(login string) (string, error) {

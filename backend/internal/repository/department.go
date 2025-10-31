@@ -34,7 +34,7 @@ func (dr departmentRepo) GetUserOnDepartmentByTaskID(task_id int) ([]entity.User
 		FROM users u
 		JOIN employee e ON e.user_id = u.id
 		JOIN task_department td ON e.depart_id = td.department_id
-		JOIN user_task ut ON ut.task_id = td.task_id
+		JOIN tasks ut ON ut.task_id = td.task_id
 		WHERE ut.id = $1
 	`
 

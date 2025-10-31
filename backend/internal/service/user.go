@@ -13,6 +13,7 @@ type (
 		Login(login, pass string) (int, error)
 		GetUserByID(id int) (entity.UserMainData, error)
 		ChangePassword(id int, pass string) error
+		SetTG(id int, tg string) error
 	}
 	userService struct {
 		r repository.UserRepository
@@ -73,6 +74,17 @@ func (u userService) ChangePassword(id int, pass string) error {
 	u.l.Debug("IN USER REPO :: CHANGE PASSWORD")
 
 	err := u.r.ChangeUserPassword(id, pass)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u userService) SetTG(id int, tg string) error {
+	u.l.Debug("IN USER REPO :: SET TG")
+
+	err := u.r.SetTG(id, tg)
 	if err != nil {
 		return err
 	}

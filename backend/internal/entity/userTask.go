@@ -4,6 +4,7 @@ type (
 	UserTask struct {
 		ID          int          `json:"id" db:"id"`
 		Task        string       `json:"task_id" db:"task_id"`
+		TaskName    string       `json:"task_name" db:"task_name"`
 		Executor    UserMainData `json:"executor" db:"executor"`
 		Initiator   UserMainData `json:"initiator" db:"initiator"`
 		Description string       `json:"description" db:"description"`

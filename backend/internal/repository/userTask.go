@@ -21,8 +21,8 @@ type (
 		UpdateTask(id, status int, date string) error
 		UpdateExecutor(id int, executor int) error
 
-		GetUserAndCountTasksByDepID(id, branchId, initiator int, isSuppot bool) ([]entity.UserCountTask, error)
-		GetDepartmentByTaskID(task_id int) []entity.Department
+		GetUserAndCountTasksByRoleID(roleId, branchId, initiator int, isSuppot bool) ([]entity.UserCountTask, error)
+		// GetDepartmentByTaskID(task_id int) []entity.Department
 		GetTaskRoles(taskID int) ([]int, error)
 	}
 	userTaskRepo struct {
@@ -49,6 +49,7 @@ func (u userTaskRepo) TaskForUser(userId int) ([]entity.UserTask, error) {
         SELECT 
             ut.id,
             ut.task_id,
+			tl.name as task_name,
             ut.description,
             ut.status,
 			ut.priority,
@@ -65,14 +66,16 @@ func (u userTaskRepo) TaskForUser(userId int) ([]entity.UserTask, error) {
             init.surname AS "initiator.surname",
             init.patronymic AS "initiator.patronymic"
         FROM 
-            user_task ut
+            tasks ut
         JOIN 
             users exec ON ut.executor = exec.id
+		JOIN 
+			task_list tl on tl.id = ut.task_id
         JOIN 
             users init ON ut.initiator = init.id
         WHERE 
             ut.executor = $1 
-            AND ut.status NOT IN (2, 3)
+            AND ut.status != 3
         ORDER BY 
             ut.create_date DESC
     `
@@ -92,37 +95,31 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 	var ut []entity.UserTask
 
 	query := `
-        SELECT 
-            ut.id,
-            ut.task_id,
-            ut.description,
-            ut.status,
-			ut.priority,
-            ut.create_date,
-            ut.execute_date,
-            -- Данные исполнителя
-            exec.id AS "executor.id",
-            exec.name AS "executor.name",
-            exec.surname AS "executor.surname",
-            exec.patronymic AS "executor.patronymic",
-            -- Данные инициатора
-            init.id AS "initiator.id",
-            init.name AS "initiator.name",
-            init.surname AS "initiator.surname",
-            init.patronymic AS "initiator.patronymic"
-        FROM 
-            user_task ut
-        JOIN 
-            users exec ON ut.executor = exec.id
-        JOIN 
-            users init ON ut.initiator = init.id
-        WHERE 
-            ut.initiator = $1 
-            AND ut.status != 3
-        ORDER BY 
-            ut.create_date DESC
+        SELECT
+		ut.id,
+		ut.task_id,
+		tl.name as task_name,
+		ut.description,
+		ut.status,
+		ut.priority,
+		ut.create_date,
+		ut.execute_date,
+		exec.id AS "executor.id",
+		exec.name AS "executor.name",
+		exec.surname AS "executor.surname",
+		exec.patronymic AS "executor.patronymic",
+					-- Данные инициатора
+		init.id AS "initiator.id",
+		init.name AS "initiator.name",
+		init.surname AS "initiator.surname",
+		init.patronymic AS "initiator.patronymic"
+		FROM tasks ut
+		JOIN users exec ON ut.executor = exec.id
+		JOIN users init ON ut.initiator = init.id
+		join task_list tl on tl.id = ut.task_id
+		WHERE ut.initiator = $1 AND ut.status != 3
+		ORDER BY ut.create_date DESC
     `
-
 	err := u.db.Select(&ut, query, userId)
 	if err != nil {
 		u.l.Error(err.Error())
@@ -132,22 +129,22 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 	return ut, nil
 }
 
-func (u userTaskRepo) GetDepartmentByTaskID(task_id int) []entity.Department {
-	query := `
-        SELECT d.id, d.name 
-        FROM departments d
-        JOIN task_department td ON d.id = td.department_id
-        WHERE td.task_id = $1
-    `
+// func (u userTaskRepo) GetDepartmentByTaskID(task_id int) []entity.Department {
+// 	query := `
+//         SELECT d.id, d.name
+//         FROM departments d
+//         JOIN task_department td ON d.id = td.department_id
+//         WHERE td.task_id = $1
+//     `
 
-	var departments []entity.Department
-	err := u.db.Select(&departments, query, task_id)
-	if err != nil {
-		u.l.Error(err.Error())
-	}
+// 	var departments []entity.Department
+// 	err := u.db.Select(&departments, query, task_id)
+// 	if err != nil {
+// 		u.l.Error(err.Error())
+// 	}
 
-	return departments
-}
+// 	return departments
+// }
 
 func (u userTaskRepo) GetTaskRoles(taskID int) ([]int, error) {
 	query := `
@@ -166,29 +163,30 @@ func (u userTaskRepo) GetTaskRoles(taskID int) ([]int, error) {
 	return roleIDs, nil
 }
 
-func (u userTaskRepo) GetUserAndCountTasksByDepID(depId, branchId, initiator int, isSupport bool) ([]entity.UserCountTask, error) {
+func (u userTaskRepo) GetUserAndCountTasksByRoleID(roleId, branchId, initiator int, isSupport bool) ([]entity.UserCountTask, error) {
 
 	var uc []entity.UserCountTask
 
 	type QueryParams struct {
-		DepID       int `db:"dep_id"`
+		RoleId      int `db:"role_id"`
 		BranchID    int `db:"branch_id"`
 		InitiatorID int `db:"initiator_id"`
 	}
 
 	params := QueryParams{
-		DepID:       depId,
+		RoleId:      roleId,
 		BranchID:    branchId,
 		InitiatorID: initiator,
 	}
 
 	query := `
-        SELECT u.id as user_id, COUNT(ut.id) as task_count
-        FROM users u
-        LEFT JOIN user_task ut ON u.id = ut.executor AND ut.status != 3
-        JOIN employee e ON u.id = e.user_id
-        JOIN branches b ON b.id = e.branch_id
-        WHERE e.depart_id = :dep_id AND u.id != :initiator_id
+		SELECT u.id as user_id, COUNT(ut.id) as task_count
+		FROM users u
+		LEFT JOIN tasks ut ON ut.executor = u.id
+		left JOIN user_role ur ON ur.user_id = u.id
+		JOIN employee e ON u.id = e.user_id
+		JOIN branches b ON b.id = e.branch_id
+		WHERE ur.role_id=:role_id and u.id != :initiator_id
     `
 
 	if isSupport {
@@ -222,7 +220,7 @@ func (u userTaskRepo) CreateTask(uc entity.UserTaskCreate) error {
 	var id int
 
 	row := u.db.QueryRow(`
-    INSERT INTO user_task 
+    INSERT INTO tasks 
     (task_id, executor, initiator, description, status, priority, create_date)
     VALUES ($1, $2, $3, $4, $5, $6, $7) 
     RETURNING id`,
@@ -257,6 +255,7 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
         SELECT 
             ut.id,
             ut.task_id,
+			tl.name as task_name,
             ut.description,
             ut.status,
 			ut.priority,
@@ -273,9 +272,11 @@ func (u userTaskRepo) GetTaskByID(id int) (entity.UserTask, error) {
             init.surname AS "initiator.surname",
             init.patronymic AS "initiator.patronymic"
         FROM 
-            user_task ut
+            tasks ut
         JOIN 
             users exec ON ut.executor = exec.id
+		JOIN 
+			task_list tl on tl.id = ut.task_id
         JOIN 
             users init ON ut.initiator = init.id
         WHERE 
@@ -298,7 +299,7 @@ func (u userTaskRepo) DeleteTask(id int) error {
 	u.l.Debug("IN USER TASK REPO :: DELETE TASK")
 
 	query := `
-		UPDATE user_task SET status=3 WHERE id=$1
+		UPDATE tasks SET status=3 WHERE id=$1
 	`
 
 	_, err := u.db.Exec(query, id)
@@ -326,7 +327,7 @@ func (u userTaskRepo) UpdateTask(id, status int, date string) error {
 	u.l.Debug("IN USER TASK REPO :: EXEC TASK")
 
 	query := `
-		UPDATE user_task SET status=$3, execute_date=$2 WHERE id=$1
+		UPDATE tasks SET status=$3, execute_date=$2 WHERE id=$1
 	`
 
 	_, err := u.db.Exec(query, id, date, status)
@@ -364,7 +365,7 @@ func (u userTaskRepo) UpdateExecutor(id int, executor int) error {
 	u.l.Debug("IN USER TASK REPO :: CHANGE EXECUTOR TASK")
 
 	query := `
-		UPDATE user_task SET executor=$1 WHERE id=$2
+		UPDATE tasks SET executor=$1 WHERE id=$2
 	`
 
 	_, err := u.db.Exec(query, executor, id)

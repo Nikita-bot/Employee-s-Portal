@@ -47,7 +47,7 @@
               </div>
             </div>
             <div class="news-card-footer">
-              <span class="news-author">Автор: {{ news.author?.name || 'Неизвестный автор' }}</span>
+              <span class="news-author">Автор: {{  selectedNews.author?.surname + " " +selectedNews.author?.name[0] + "." + selectedNews.author?.patronymic[0] + "." || 'Неизвестный автор' }}</span>
               <span class="read-more" @click="openNewsModal(news.id)">Читать полностью</span>
             </div>
           </div>
@@ -123,7 +123,7 @@
         <div class="modal-body">
           <div class="full-news-meta">
             <span>{{ formatDate(selectedNews.date) }}</span>
-            <span>Автор: {{ selectedNews.author?.name || 'Неизвестный автор' }}</span>
+            <span>Автор: {{ selectedNews.author?.surname + " " +selectedNews.author?.name[0] + "." + selectedNews.author?.patronymic[0] + "." || 'Неизвестный автор' }}</span>
           </div>
           <div class="full-news-content" v-html="selectedNews.content"></div>
           <div v-if="selectedNews.attachments && selectedNews.attachments.length > 0" class="news-attachments">

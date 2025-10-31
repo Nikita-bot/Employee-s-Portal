@@ -8,16 +8,57 @@
       <main class="content-area">
         <div class="page-header">
           <h1>Мой профиль</h1>
+          <button class="btn btn-outline" @click="changePassword" v-if="!showPasswordForm">
+            Сменить пароль
+          </button>
         </div>
 
-        <div class="profile-container">
+        <!-- Форма смены пароля -->
+        <div class="password-form" v-if="showPasswordForm">
+          <div class="form-section">
+            <h3>Смена пароля</h3>
+            <div class="form-group">
+              <label for="newPassword">Новый пароль</label>
+              <input 
+                type="password" 
+                id="newPassword" 
+                v-model="passwordForm.newPassword"
+                placeholder="Введите новый пароль"
+              >
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">Подтвердите пароль</label>
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                v-model="passwordForm.confirmPassword"
+                placeholder="Подтвердите новый пароль"
+              >
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-outline" @click="cancelPasswordChange">Отмена</button>
+              <button class="btn btn-primary" @click="savePassword" :disabled="!isPasswordValid">
+                Сохранить пароль
+              </button>
+            </div>
+            <div class="error-message" v-if="passwordError">
+              {{ passwordError }}
+            </div>
+            <div class="success-message" v-if="passwordSuccess">
+              Пароль успешно изменен!
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-container" v-if="!showPasswordForm">
           <!-- Шапка профиля -->
           <div class="profile-header">
             <img :src="user.avatar" alt="Аватар" class="avatar-large">
             <div class="profile-info">
-              <h2>{{ user.name }}</h2>
+              <h2>{{ fullName }}</h2>
               <div class="profile-position">{{ user.position }}</div>
               <div class="profile-department">{{ user.department }}</div>
+              <div class="profile-branch" v-if="user.branch">Филиал: {{ user.branch }}</div>
             </div>
           </div>
 
@@ -31,24 +72,33 @@
               </div>
               <div class="section-body">
                 <div class="info-item">
-                  <span class="info-label">Дата рождения:</span>
-                  <span class="info-value">{{ user.birthDate }}</span>
-                </div>
-                <div class="info-item">
                   <span class="info-label">Телефон:</span>
-                  <span class="info-value">{{ user.phone }}</span>
+                  <span class="info-value">{{ user.phone || 'Не указан' }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Email:</span>
-                  <span class="info-value">{{ user.email }}</span>
+                  <span class="info-value">{{ user.email || 'Не указан' }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Кабинет:</span>
-                  <span class="info-value">{{ user.office }}</span>
+                  <span class="info-label">Telegram:</span>
+                  <span class="info-value">
+                    <a v-if="user.tgId" :href="user.tgLink" target="_blank" class="tg-link">
+                      {{ user.tgId }}
+                    </a>
+                    <span v-else>Не указан</span>
+                  </span>
                 </div>
-                <div class="info-item">
-                  <span class="info-label">Стаж работы:</span>
-                  <span class="info-value">{{ user.experience }}</span>
+                <div class="info-item" v-if="user.tabNumber">
+                  <span class="info-label">Табельный номер:</span>
+                  <span class="info-value">{{ user.tabNumber }}</span>
+                </div>
+                <div class="info-item" v-if="user.address">
+                  <span class="info-label">Адрес:</span>
+                  <span class="info-value">{{ user.address }}</span>
+                </div>
+                <div class="info-item" v-if="user.passport">
+                  <span class="info-label">Паспорт:</span>
+                  <span class="info-value">{{ user.passport }}</span>
                 </div>
               </div>
             </div>
@@ -57,124 +107,43 @@
             <div class="info-section">
               <div class="section-header">
                 <h3>Профессиональная информация</h3>
-                <button class="edit-btn" @click="editProfessionalInfo">Редактировать</button>
               </div>
               <div class="section-body">
                 <div class="info-item">
                   <span class="info-label">Отдел:</span>
-                  <span class="info-value">{{ user.department }}</span>
+                  <span class="info-value">{{ user.department || 'Не указан' }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Должность:</span>
-                  <span class="info-value">{{ user.position }}</span>
+                  <span class="info-value">{{ user.position || 'Не указана' }}</span>
                 </div>
-                <div class="info-item">
-                  <span class="info-label">Категория:</span>
-                  <span class="info-value">{{ user.category }}</span>
+                <div class="info-item" v-if="user.employment">
+                  <span class="info-label">Занятость:</span>
+                  <span class="info-value">{{ user.employment }}</span>
                 </div>
-                <div class="info-item">
-                  <span class="info-label">Ученая степень:</span>
-                  <span class="info-value">{{ user.degree }}</span>
-                </div>
-                <div class="info-item">
+                <div class="info-item" v-if="user.startDate">
                   <span class="info-label">Дата приема:</span>
-                  <span class="info-value">{{ user.hireDate }}</span>
+                  <span class="info-value">{{ formatDate(user.startDate) }}</span>
                 </div>
-              </div>
-            </div>
-
-            <!-- Статистика -->
-            <div class="info-section">
-              <div class="section-header">
-                <h3>Статистика за месяц</h3>
-              </div>
-              <div class="section-body">
-                <div class="stats-grid">
-                  <div class="stat-card">
-                    <div class="stat-number">{{ stats.appointments }}</div>
-                    <div class="stat-label">Приемов</div>
-                  </div>
-                  <div class="stat-card">
-                    <div class="stat-number">{{ stats.operations }}</div>
-                    <div class="stat-label">Операций</div>
-                  </div>
-                  <div class="stat-card">
-                    <div class="stat-number">{{ stats.successRate }}</div>
-                    <div class="stat-label">Успешность</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- ЭЦП и безопасность -->
-            <div class="info-section">
-              <div class="section-header">
-                <h3>ЭЦП и безопасность</h3>
-              </div>
-              <div class="section-body">
-                <div class="info-item">
-                  <span class="info-label">ЭЦП:</span>
-                  <span class="info-value">{{ security.ecp }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Telegram:</span>
-                  <span class="info-value">{{ security.telegram }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Последний вход:</span>
-                  <span class="info-value">{{ security.lastLogin }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Двухфакторная аутентификация:</span>
-                  <span class="info-value">{{ security.twoFactor }}</span>
+                <div class="info-item" v-if="otherPositions.length > 0">
+                  <span class="info-label">Другие должности:</span>
+                  <span class="info-value">
+                    <div v-for="pos in otherPositions" :key="pos.name" class="other-position">
+                      {{ pos.name }} ({{ pos.department }})
+                    </div>
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Календарь -->
-          <div class="calendar-section">
-            <div class="section-header">
-              <h3>Календарь</h3>
-              <button class="edit-btn" @click="showCalendar">Просмотреть все</button>
-            </div>
-            <div class="calendar-header">
-              <span>{{ currentMonth }}</span>
-              <div>
-                <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; margin-right: 0.5rem;">←</button>
-                <button class="btn btn-outline" style="padding: 0.25rem 0.5rem;">→</button>
-              </div>
-            </div>
-            <div class="calendar-grid">
-              <div v-for="day in calendar.daysOfWeek" :key="day" class="calendar-day header">
-                {{ day }}
-              </div>
-              <div v-for="day in calendar.days" :key="day.number" 
-                   :class="['calendar-day', day.class]">
-                {{ day.number }}
-                <div v-if="day.event" class="calendar-event">{{ day.event }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Аналитика и быстрые действия -->
+          <!-- Быстрые действия -->
           <div class="analytics-section">
             <div class="section-header">
-              <h3>Аналитика и действия</h3>
+              <h3>Действия</h3>
             </div>
             <div class="analytics-grid">
-              <div class="chart-placeholder">
-                📊 График рабочей нагрузки<br>
-                <small>Здесь будет отображаться ваша активность и статистика</small>
-              </div>
               <div class="quick-actions">
-                <a href="#" class="action-btn">
-                  <div class="action-icon">📋</div>
-                  <div class="action-text">
-                    <h4>Мои отчеты</h4>
-                    <p>Просмотр и создание отчетов</p>
-                  </div>
-                </a>
                 <router-link to="/tasks" class="action-btn">
                   <div class="action-icon">✅</div>
                   <div class="action-text">
@@ -182,13 +151,6 @@
                     <p>Текущие и назначенные</p>
                   </div>
                 </router-link>
-                <a href="#" class="action-btn">
-                  <div class="action-icon">📚</div>
-                  <div class="action-text">
-                    <h4>База знаний</h4>
-                    <p>Протоколы и стандарты</p>
-                  </div>
-                </a>
                 <router-link to="/support" class="action-btn">
                   <div class="action-icon">🛠️</div>
                   <div class="action-text">
@@ -196,6 +158,13 @@
                     <p>Техническая помощь</p>
                   </div>
                 </router-link>
+                <a href="#" class="action-btn" @click.prevent="changePassword">
+                  <div class="action-icon">🔒</div>
+                  <div class="action-text">
+                    <h4>Безопасность</h4>
+                    <p>Сменить пароль</p>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
@@ -219,10 +188,6 @@
             <label for="editEmail">Email</label>
             <input type="email" id="editEmail" v-model="editForm.email">
           </div>
-          <div class="form-group">
-            <label for="editCabinet">Кабинет</label>
-            <input type="text" id="editCabinet" v-model="editForm.office">
-          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" @click="closeEditPersonalModal">Отмена</button>
@@ -236,70 +201,193 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user.js'
 import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppFooter from '@/components/AppFooter.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
+
 const showPersonalModal = ref(false)
+const showPasswordForm = ref(false)
+const passwordError = ref('')
+const passwordSuccess = ref('')
 
 const user = reactive({
-  name: 'Иванов Александр Сергеевич',
-  avatar: '/default-avatar.png',
-  position: 'Врач-кардиолог высшей категории',
-  department: 'Кардиологическое отделение',
-  birthDate: '15.03.1980',
-  phone: '+7 (912) 345-67-89',
-  email: 'a.ivanov@hospital.ru',
-  office: '305',
-  experience: '15 лет',
-  category: 'Высшая',
-  degree: 'Кандидат медицинских наук',
-  hireDate: '10.08.2008'
-})
-
-const stats = reactive({
-  appointments: 42,
-  operations: 18,
-  successRate: '96%'
-})
-
-const security = reactive({
-  ecp: 'Активна до 15.12.2024',
-  telegram: 'Привязан',
-  lastLogin: 'Сегодня, 10:30',
-  twoFactor: 'Включена'
+  id: null,
+  name: '',
+  surname: '',
+  patronymic: '',
+  login: '',
+  phone: '',
+  email: '',
+  tgLink: '',
+  tgId: '',
+  address: '',
+  passport: '',
+  position: '',
+  department: '',
+  branch: '',
+  employment: '',
+  startDate: '',
+  tabNumber: '',
+  roles: [],
+  otherPositions: [],
+  avatar: '/default-avatar.png'
 })
 
 const editForm = reactive({
-  phone: user.phone,
-  email: user.email,
-  office: user.office
+  phone: '',
+  email: ''
 })
 
-const calendar = reactive({
-  daysOfWeek: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-  days: [
-    { number: 1, class: 'other-month' }, { number: 2, class: 'other-month' }, 
-    { number: 3, class: 'other-month' }, { number: 4, class: 'other-month' }, 
-    { number: 5, class: 'other-month' }, { number: 6, class: 'today', event: 'Прием 10:00' },
-    { number: 7, class: '' }, { number: 8, class: '' }, { number: 9, class: '' }, 
-    { number: 10, class: '' }, { number: 11, class: '' }, { number: 12, class: '', event: 'Семинар 14:00' },
-    { number: 13, class: '' }, { number: 14, class: '' }, { number: 15, class: '', event: 'Консилиум 11:00' },
-    // ... остальные дни
-  ]
+const passwordForm = reactive({
+  newPassword: '',
+  confirmPassword: ''
 })
 
-const currentMonth = computed(() => {
-  return new Date().toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
+const fullName = computed(() => {
+  return `${user.surname} ${user.name} ${user.patronymic}`.trim()
 })
+
+const otherPositions = computed(() => {
+  return user.otherPositions || []
+})
+
+const isPasswordValid = computed(() => {
+  return passwordForm.newPassword && 
+         passwordForm.confirmPassword && 
+         passwordForm.newPassword === passwordForm.confirmPassword
+})
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('ru-RU')
+}
+
+const formatPassport = (passData) => {
+  if (!passData.ser || !passData.num) return ''
+  return `${passData.ser} ${passData.num}`
+}
+
+const loadUserData = async () => {
+  if (!userStore.userId) {
+    console.error('User ID not available')
+    return
+  }
+
+  try {
+    const response = await fetch(`/api/v1/user/${userStore.userId}`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch user data')
+    }
+
+    const data = await response.json()
+    const userData = data.user
+
+    // Заполняем данные пользователя
+    Object.assign(user, {
+      id: userData.id,
+      name: userData.name,
+      surname: userData.surname,
+      patronymic: userData.patronymic,
+      login: userData.login,
+      phone: userData.phone,
+      email: userData.email,
+      tgLink: userData.tg_link,
+      tgId: userData.tg_id,
+      address: userData.adress,
+      passport: formatPassport({
+        ser: userData.pasport_ser,
+        num: userData.pasport_num
+      }),
+      roles: userData.roles || []
+    })
+
+    // Заполняем данные сотрудника
+    if (userData.employee) {
+      const emp = userData.employee
+      Object.assign(user, {
+        position: emp.position,
+        department: emp.department,
+        branch: emp.branch,
+        employment: emp.zanyatost,
+        startDate: emp.start_date,
+        tabNumber: emp.tab_num,
+        otherPositions: emp.other_position || []
+      })
+    }
+
+    // Расчет опыта
+    if (user.startDate) {
+      const start = new Date(user.startDate)
+      const now = new Date()
+      const experience = now.getFullYear() - start.getFullYear()
+      user.experience = experience > 0 ? experience : 0
+    }
+
+    user.rolesCount = user.roles.length
+
+  } catch (error) {
+    console.error('Error loading user data:', error)
+  }
+}
+
+const changePassword = () => {
+  showPasswordForm.value = true
+  passwordError.value = ''
+  passwordSuccess.value = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+}
+
+const cancelPasswordChange = () => {
+  showPasswordForm.value = false
+  passwordError.value = ''
+  passwordSuccess.value = ''
+}
+
+const savePassword = async () => {
+  if (!isPasswordValid.value) {
+    passwordError.value = 'Пароли не совпадают или слишком короткие (мин. 6 символов)'
+    return
+  }
+  console.log(userStore.userId)
+  const formData = new FormData();
+  formData.append('id', userStore.userId);
+  formData.append('pass', passwordForm.newPassword);
+  try {
+    const response = await fetch('/api/v1/user/pass', {
+      method: 'PATCH',
+      body: formData
+    })
+
+    console.log(response)
+    if (response.ok) {
+      passwordSuccess.value = true
+      passwordError.value = ''
+      
+      setTimeout(() => {
+        showPasswordForm.value = false
+        passwordSuccess.value = false
+      }, 2000)
+    } else {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Ошибка при смене пароля')
+    }
+  } catch (error) {
+    passwordError.value = error.message
+    passwordSuccess.value = false
+  }
+}
 
 const editPersonalInfo = () => {
   editForm.phone = user.phone
   editForm.email = user.email
-  editForm.office = user.office
   showPersonalModal.value = true
 }
 
@@ -307,21 +395,18 @@ const closeEditPersonalModal = () => {
   showPersonalModal.value = false
 }
 
-const editProfessionalInfo = () => {
-  alert('Редактирование профессиональной информации')
-}
-
-const showCalendar = () => {
-  alert('Открытие полного календаря')
-}
-
 const savePersonalInfo = () => {
   user.phone = editForm.phone
   user.email = editForm.email
-  user.office = editForm.office
-  alert('Личная информация сохранена')
+  // Здесь можно добавить вызов API для сохранения изменений
   closeEditPersonalModal()
 }
+
+onMounted(() => {
+  if (userStore.isAuthenticated) {
+    loadUserData()
+  }
+})
 </script>
 
 <style scoped>
@@ -358,6 +443,26 @@ const savePersonalInfo = () => {
 .page-header h1 {
   font-weight: 300;
   color: #2c5aa0;
+}
+
+.password-form {
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-section h3 {
+  color: #2c5aa0;
+  margin-bottom: 1.5rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .profile-container {
@@ -397,6 +502,15 @@ const savePersonalInfo = () => {
 }
 
 .profile-department {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+.profile-branch {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -476,91 +590,9 @@ const savePersonalInfo = () => {
   flex: 1;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.stat-card {
-  background: #f8f9fa;
-  padding: 1.25rem;
-  border-radius: 6px;
-  text-align: center;
-  border-left: 4px solid #2c5aa0;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: 300;
-  color: #2c5aa0;
-  line-height: 1;
-}
-
-.stat-label {
-  color: #666;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-}
-
-.calendar-section {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e1e5e9;
-  margin-bottom: 2rem;
-}
-
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e1e5e9;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  background: #e1e5e9;
-  border: 1px solid #e1e5e9;
-}
-
-.calendar-day {
-  background: white;
-  padding: 0.75rem;
-  min-height: 80px;
+.other-position {
+  margin-bottom: 0.25rem;
   font-size: 0.9rem;
-}
-
-.calendar-day.header {
-  background: #f8f9fa;
-  font-weight: 500;
-  text-align: center;
-  color: #666;
-}
-
-.calendar-day.other-month {
-  color: #ccc;
-  background: #fafafa;
-}
-
-.calendar-day.today {
-  background: #e3f2fd;
-  border: 2px solid #2c5aa0;
-}
-
-.calendar-event {
-  background: #2c5aa0;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-  cursor: pointer;
 }
 
 .analytics-section {
@@ -572,23 +604,12 @@ const savePersonalInfo = () => {
 }
 
 .analytics-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
   padding: 1.5rem;
-}
-
-.chart-placeholder {
-  background: #f8f9fa;
-  border-radius: 6px;
-  padding: 2rem;
-  text-align: center;
-  color: #666;
-  border: 2px dashed #e1e5e9;
 }
 
 .quick-actions {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
 }
 
@@ -633,6 +654,22 @@ const savePersonalInfo = () => {
   margin: 0;
   color: #666;
   font-size: 0.85rem;
+}
+
+.error-message {
+  background: #fde8e8;
+  color: #e74c3c;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.success-message {
+  background: #e8f5e8;
+  color: #27ae60;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
 }
 
 /* Modal Styles */
@@ -712,9 +749,7 @@ const savePersonalInfo = () => {
   font-weight: 500;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.form-group input {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #ddd;
@@ -723,9 +758,7 @@ const savePersonalInfo = () => {
   transition: all 0.3s ease;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.form-group input:focus {
   outline: none;
   border-color: #2c5aa0;
   box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
@@ -758,6 +791,11 @@ const savePersonalInfo = () => {
   background: #1e3d6f;
 }
 
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 .btn-outline {
   background: transparent;
   border: 1px solid #2c5aa0;
@@ -784,22 +822,28 @@ const savePersonalInfo = () => {
     gap: 1rem;
   }
   
-  .stats-grid {
+  .quick-actions {
     grid-template-columns: 1fr;
   }
   
-  .analytics-grid {
-    grid-template-columns: 1fr;
+  .info-item {
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
-  .calendar-grid {
-    grid-template-columns: repeat(7, 1fr);
-    font-size: 0.8rem;
+  .info-label, .info-value {
+    text-align: left;
   }
-  
-  .calendar-day {
-    min-height: 60px;
-    padding: 0.5rem;
-  }
+
+.tg-link {
+  color: #2c5aa0;
+  text-decoration: none;
+  border-bottom: 1px dashed #2c5aa0;
+}
+
+.tg-link:hover {
+  color: #1e3d6f;
+  border-bottom: 1px solid #1e3d6f;
+}
 }
 </style>

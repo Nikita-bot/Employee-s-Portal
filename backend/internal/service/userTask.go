@@ -68,11 +68,12 @@ func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
 	}
 
 	isSupp = taskType.Type == "support"
+	u.l.Debug("IN CREATE TASK SERVICE :: ", zap.Bool("Is Support", isSupp))
 
-	deps := u.r.GetDepartmentByTaskID(uc.Task)
+	roles, _ := u.r.GetTaskRoles(uc.Task)
 	u.l.Debug("IN SERVICE", zap.Any("User:", uc.Initiator))
-	for _, dep := range deps {
-		ut, err := u.r.GetUserAndCountTasksByDepID(dep.ID, uc.BranchID, uc.Initiator, isSupp)
+	for _, role := range roles {
+		ut, err := u.r.GetUserAndCountTasksByRoleID(role, uc.BranchID, uc.Initiator, isSupp)
 		if err != nil {
 			return err
 		}

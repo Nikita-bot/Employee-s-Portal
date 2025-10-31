@@ -12,6 +12,7 @@ type (
 		GetAllTask() ([]entity.Task, error)
 		GetITTask() ([]entity.Task, error)
 		GetTaskByID(id int) (entity.Task, error)
+		GetAvailableUsers(task_id int) ([]entity.UserMainData, error)
 	}
 	taskService struct {
 		r repository.TaskRepository
@@ -24,6 +25,17 @@ func NewTaskService(r repository.TaskRepository, l *zap.Logger) TaskService {
 		r: r,
 		l: l,
 	}
+}
+
+func (ts taskService) GetAvailableUsers(task_id int) ([]entity.UserMainData, error) {
+	ts.l.Debug("IN TASK LIST SERVICE :: GET AVAILABLE USERS")
+
+	ul, err := ts.r.GetAvailableUsers(task_id)
+	if err != nil {
+		return nil, err
+	}
+
+	return ul, nil
 }
 
 func (ts taskService) GetAllTask() ([]entity.Task, error) {

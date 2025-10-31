@@ -4,13 +4,13 @@
       <div class="modal-header">
         <h2>
           <i class="fab fa-telegram telegram-icon"></i>
-          Привязка Telegram
+          {{ isConnected ? 'Смена Telegram аккаунта' : 'Привязка Telegram' }}
         </h2>
         <button class="close-btn" @click="closeModal">&times;</button>
       </div>
       <div class="modal-body">
         <div class="instructions">
-          <h3>Как привязать Telegram:</h3>
+          <h3>Как {{ isConnected ? 'сменить' : 'привязать' }} Telegram:</h3>
           
           <div class="instruction-step">
             <div class="step-number">1</div>
@@ -41,8 +41,7 @@
             id="verificationCode" 
             v-model="verificationCode"
             class="code-input" 
-            placeholder="ABC123" 
-            maxlength="6"
+            placeholder="Введите код из Telegram" 
             @input="validateVerificationCode"
           >
           <div class="error-message" :style="{ display: showCodeError ? 'block' : 'none' }">
@@ -62,7 +61,10 @@
         <button class="btn btn-primary" :disabled="!canConnect" @click="connectTelegram" v-if="!isConnected">
           Привязать
         </button>
-        <button class="btn btn-danger" @click="disconnectTelegram" v-else>
+        <button class="btn btn-primary" :disabled="!canConnect" @click="connectTelegram" v-else>
+          Сменить
+        </button>
+        <button class="btn btn-danger" @click="disconnectTelegram" v-if="isConnected">
           Отвязать
         </button>
       </div>
@@ -71,21 +73,26 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useUserStore } from '@/stores/user.js'
+
+const userStore = useUserStore()
 
 const showModal = ref(false)
 const verificationCode = ref('')
 const showCodeError = ref(false)
 const showCodeSuccess = ref(false)
-const codeErrorText = ref('Неверный код подтверждения')
+const codeErrorText = ref('')
 const isConnected = ref(false)
+const isLoading = ref(false)
 
 const canConnect = computed(() => {
-  return /^[A-Z0-9]{6}$/.test(verificationCode.value.toUpperCase())
+  return verificationCode.value.trim() !== ''
 })
 
 const show = () => {
   showModal.value = true
+  checkCurrentTGStatus()
 }
 
 const closeModal = () => {
@@ -97,17 +104,23 @@ const resetForm = () => {
   verificationCode.value = ''
   showCodeError.value = false
   showCodeSuccess.value = false
-  isConnected.value = false
+  codeErrorText.value = ''
+  isLoading.value = false
+}
+
+const checkCurrentTGStatus = () => {
+  // Проверяем наличие Telegram в store
+  if (userStore.user && userStore.user.tg_id) {
+    isConnected.value = true
+  } else {
+    isConnected.value = false
+  }
 }
 
 const validateVerificationCode = () => {
-  const code = verificationCode.value.toUpperCase()
-  const isValid = /^[A-Z0-9]{6}$/.test(code)
+  const code = verificationCode.value.trim()
   
-  if (code.length === 6 && !isValid) {
-    showCodeError.value = true
-    showCodeSuccess.value = false
-  } else if (isValid) {
+  if (code.length > 0) {
     showCodeError.value = false
     showCodeSuccess.value = true
   } else {
@@ -116,23 +129,90 @@ const validateVerificationCode = () => {
   }
 }
 
-const connectTelegram = () => {
+const connectTelegram = async () => {
   if (!canConnect.value) return
 
-  // Демо-логика
-  if (verificationCode.value.toUpperCase() === 'ABC123') {
-    isConnected.value = true
-  } else {
+  isLoading.value = true
+  showCodeError.value = false
+  console.log(verificationCode.value.trim(), 
+  userStore.userId)
+  const formData = new FormData();
+  formData.append('user_id', userStore.userId);
+  formData.append('tg', verificationCode.value.trim());
+
+  try {
+    const response = await fetch('/api/v1/user/tg', {
+      method: 'PATCH',
+      body: formData
+    })
+
+    if (response.ok) {
+      showCodeSuccess.value = true
+      isConnected.value = true
+      
+      // Обновляем данные пользователя в store
+      await userStore.fetchUserData()
+      
+      setTimeout(() => {
+        closeModal()
+        if (typeof window.showNotification === 'function') {
+          window.showNotification('Telegram успешно привязан!', 'success')
+        }
+      }, 1500)
+    } else {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Ошибка при привязке Telegram')
+    }
+  } catch (error) {
+    console.error('Ошибка привязки Telegram:', error)
     showCodeError.value = true
-    codeErrorText.value = 'Неверный код подтверждения'
+    codeErrorText.value = error.message || 'Произошла ошибка при привязке Telegram'
+    showCodeSuccess.value = false
+  } finally {
+    isLoading.value = false
   }
 }
 
-const disconnectTelegram = () => {
-  // В реальном приложении AJAX запрос
-  console.log('Отвязка Telegram')
-  resetForm()
-  alert('Telegram успешно отвязан от вашего аккаунта')
+const disconnectTelegram = async () => {
+  if (!confirm('Вы уверены, что хотите отвязать Telegram аккаунт?')) {
+    return
+  }
+
+  isLoading.value = true
+  const formData = new FormData();
+  formData.append('user_id', userStore.userId);
+  formData.append('tg', '');
+
+  try {
+    const response = await fetch('/api/v1/user/tg', {
+      method: 'PATCH',
+      body: formData
+    })
+
+    if (response.ok) {
+      // Обновляем данные пользователя в store
+      await userStore.fetchUserData()
+      
+      resetForm()
+      isConnected.value = false
+      
+      if (typeof window.showNotification === 'function') {
+        window.showNotification('Telegram успешно отвязан', 'success')
+      }
+      
+      setTimeout(() => {
+        closeModal()
+      }, 1000)
+    } else {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Ошибка при отвязке Telegram')
+    }
+  } catch (error) {
+    console.error('Ошибка отвязки Telegram:', error)
+    alert(error.message || 'Произошла ошибка при отвязке Telegram')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 defineExpose({
@@ -141,7 +221,6 @@ defineExpose({
 </script>
 
 <style scoped>
-/* Стили из main.css для Telegram модалки */
 .instructions {
   background: #f8f9fa;
   padding: 1.5rem;

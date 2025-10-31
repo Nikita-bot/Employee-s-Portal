@@ -45,12 +45,17 @@
           <div class="success-message" :style="{ display: passwordSuccess ? 'block' : 'none' }">
             Пароль успешно изменен!
           </div>
+
+          <div class="error-message" :style="{ display: passwordError ? 'block' : 'none' }">
+            {{ passwordError }}
+          </div>
         </form>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" @click="closeModal">Отмена</button>
-        <button class="btn btn-primary" :disabled="!canSave" @click="changePassword">
-          Сохранить
+        <button class="btn btn-primary" :disabled="!canSave || isLoading" @click="changePassword">
+          <span v-if="isLoading">Сохранение...</span>
+          <span v-else>Сохранить</span>
         </button>
       </div>
     </div>
@@ -59,12 +64,17 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useUserStore } from '@/stores/user.js'
+
+const userStore = useUserStore()
 
 const showModal = ref(false)
 const newPassword = ref('')
 const confirmPassword = ref('')
 const showPasswordError = ref(false)
 const passwordSuccess = ref(false)
+const passwordError = ref('')
+const isLoading = ref(false)
 
 const canSave = computed(() => {
   return newPassword.value === confirmPassword.value && 
@@ -86,6 +96,8 @@ const resetForm = () => {
   confirmPassword.value = ''
   showPasswordError.value = false
   passwordSuccess.value = false
+  passwordError.value = ''
+  isLoading.value = false
 }
 
 const togglePasswordVisibility = (fieldId) => {
@@ -100,22 +112,47 @@ const togglePasswordVisibility = (fieldId) => {
 const validatePassword = () => {
   showPasswordError.value = confirmPassword.value !== '' && 
                            newPassword.value !== confirmPassword.value
+  passwordError.value = ''
 }
 
-const changePassword = () => {
+const changePassword = async () => {
   if (!canSave.value) return
 
-  // В реальном приложении здесь AJAX запрос
-  console.log('Смена пароля:', {
-    newPassword: newPassword.value,
-    confirmPassword: confirmPassword.value
-  })
-  
-  passwordSuccess.value = true
-  
-  setTimeout(() => {
-    closeModal()
-  }, 2000)
+  isLoading.value = true
+  passwordError.value = ''
+  const formData = new FormData();
+  formData.append('id', userStore.userId);
+  formData.append('pass', newPassword.value);
+
+
+  try {
+    const response = await fetch('/api/v1/user/pass', {
+      method: 'PATCH',
+      body: formData
+    })
+
+    if (response.ok) {
+      passwordSuccess.value = true
+      passwordError.value = ''
+      
+      setTimeout(() => {
+        closeModal()
+        // Показываем глобальное уведомление об успехе
+        if (typeof window.showNotification === 'function') {
+          window.showNotification('Пароль успешно изменен', 'success')
+        }
+      }, 1500)
+    } else {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Ошибка при смене пароля')
+    }
+  } catch (error) {
+    console.error('Ошибка смены пароля:', error)
+    passwordError.value = error.message || 'Произошла ошибка при смене пароля'
+    passwordSuccess.value = false
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // Экспортируем методы для использования в других компонентах
@@ -125,7 +162,6 @@ defineExpose({
 </script>
 
 <style scoped>
-/* Стили из main.css для модалок */
 .modal {
   display: none;
   position: fixed;
@@ -217,6 +253,11 @@ defineExpose({
   border: none;
   color: #666;
   cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+}
+.toggle-password:hover {
+  background: #f0f0f0;
 }
 .error-message {
   color: #e74c3c;
