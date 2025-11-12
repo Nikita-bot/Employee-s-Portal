@@ -10,6 +10,7 @@ import (
 type (
 	DepartmentRepository interface {
 		GetUserOnDepartmentByTaskID(task_id int) ([]entity.User, error)
+		GetAll() ([]entity.Department, error)
 	}
 	departmentRepo struct {
 		db *sqlx.DB
@@ -22,6 +23,25 @@ func NewDepartmentRepo(db *sqlx.DB, l *zap.Logger) DepartmentRepository {
 		db: db,
 		l:  l,
 	}
+}
+
+func (r departmentRepo) GetAll() ([]entity.Department, error) {
+	r.l.Info("IN NEWS REPO :: GET ALL Department")
+
+	var n []entity.Department
+
+	query := `
+        SELECT 
+            n.id, 
+            n.name
+        FROM departments n
+    `
+	err := r.db.Select(&n, query)
+	if err != nil {
+		r.l.Error(err.Error())
+		return nil, err
+	}
+	return n, nil
 }
 
 func (dr departmentRepo) GetUserOnDepartmentByTaskID(task_id int) ([]entity.User, error) {

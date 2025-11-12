@@ -23,7 +23,7 @@ type (
 
 		GetUserAndCountTasksByRoleID(roleId, branchId, initiator int, isSuppot bool) ([]entity.UserCountTask, error)
 		// GetDepartmentByTaskID(task_id int) []entity.Department
-		GetTaskRoles(taskID int) ([]int, error)
+		GetTaskRoles(taskID int) (int, error)
 	}
 	userTaskRepo struct {
 		db *sqlx.DB
@@ -146,21 +146,23 @@ func (u userTaskRepo) TaskByUser(userId int) ([]entity.UserTask, error) {
 // 	return departments
 // }
 
-func (u userTaskRepo) GetTaskRoles(taskID int) ([]int, error) {
+func (u userTaskRepo) GetTaskRoles(taskID int) (int, error) {
 	query := `
 		SELECT role_id 
 		FROM task_roles 
 		WHERE task_id = $1
 	`
 
-	var roleIDs []int
-	err := u.db.Select(&roleIDs, query, taskID)
+	var roleID int
+	err := u.db.Get(&roleID, query, taskID)
 	if err != nil {
 		u.l.Error("Failed to get task roles", zap.Error(err))
-		return nil, err
+		return 0, err
 	}
 
-	return roleIDs, nil
+	u.l.Debug("Task roles", zap.Any("taskID", taskID), zap.Any("roleID", roleID))
+
+	return roleID, nil
 }
 
 func (u userTaskRepo) GetUserAndCountTasksByRoleID(roleId, branchId, initiator int, isSupport bool) ([]entity.UserCountTask, error) {
@@ -180,9 +182,9 @@ func (u userTaskRepo) GetUserAndCountTasksByRoleID(roleId, branchId, initiator i
 	}
 
 	query := `
-		SELECT u.id as user_id, COUNT(ut.id) as task_count
+		SELECT u.id as user_id, COUNT(ut.id) as task_count, e.depart_id as user_department
 		FROM users u
-		LEFT JOIN tasks ut ON ut.executor = u.id
+		LEFT JOIN tasks ut ON ut.executor = u.id and ut.status != 3
 		left JOIN user_role ur ON ur.user_id = u.id
 		JOIN employee e ON u.id = e.user_id
 		JOIN branches b ON b.id = e.branch_id
@@ -193,7 +195,7 @@ func (u userTaskRepo) GetUserAndCountTasksByRoleID(roleId, branchId, initiator i
 		query += " AND e.branch_id = :branch_id"
 	}
 
-	query += " GROUP BY u.id"
+	query += " GROUP BY u.id, e.depart_id"
 
 	stmt, err := u.db.PrepareNamed(query)
 	if err != nil {

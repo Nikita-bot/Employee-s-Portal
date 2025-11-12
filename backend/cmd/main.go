@@ -15,15 +15,15 @@ import (
 )
 
 func main() {
-	config, err := config.New()
+	conf, err := config.New()
 	if err != nil {
 		panic(err)
 	}
-	logger := logger.InitLogger(config)
+	logger := logger.InitLogger(conf)
 	logger.Debug("Логер готов")
 
 	logger.Info("Подключение к БД")
-	db := database.InitDB(logger, config)
+	db := database.InitDB(logger, conf)
 	defer db.Close()
 
 	if err := goose.SetDialect("postgres"); err != nil {
@@ -37,9 +37,15 @@ func main() {
 	}
 	logger.Debug("БД готова")
 
-	redis := database.InitRedis(config, logger)
+	err = config.SeedInitialData(db)
+	if err != nil {
+		logger.Error(err.Error())
+		panic("Не удалось загрузить начальные данные")
+	}
 
-	server, err := server.InitServer(config)
+	redis := database.InitRedis(conf, logger)
+
+	server, err := server.InitServer(conf)
 	if err != nil {
 		logger.Error(err.Error())
 		panic("Не удалось инициализировать сервер")
@@ -51,7 +57,7 @@ func main() {
 
 	handler := handlers.NewHandler(logger, service, server)
 
-	err = handler.Handle(config.Port)
+	err = handler.Handle(conf.Port)
 	if err != http.ErrServerClosed {
 		logger.Error(err.Error())
 		panic("Не удалось запустить сервер")

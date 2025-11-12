@@ -16,73 +16,73 @@ services:
     networks:
       - portal_network
       
-  portal_redis:
-    image: "redis:alpine"
-    container_name: portal_redis
-    ports:
-      - ${REDIS_PORT}:${REDIS_DOCKER_PORT}
-    networks:
-      - portal_network
+  # portal_redis:
+  #   image: "redis:alpine"
+  #   container_name: portal_redis
+  #   ports:
+  #     - ${REDIS_PORT}:${REDIS_DOCKER_PORT}
+  #   networks:
+  #     - portal_network
 
-  portal_backend:
-    container_name: portal_backend
-    env_file:
-      - .env
+  # portal_backend:
+  #   container_name: portal_backend
+  #   env_file:
+  #     - .env
+  #   restart: always
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   ports: 
+  #     - 8080:8080
+  #   depends_on:
+  #     - portal_database
+  #     - portal_redis
+  #   volumes:
+  #     - ./backend/log:/app/log
+  #   networks:
+  #     - portal_network
+  
+  portal_export:
+    container_name: portal_export
     restart: always
     build:
-      context: ./backend
+      context: ./export
       dockerfile: Dockerfile
     ports: 
-      - 8080:8080
+      - 8081:8081
     depends_on:
-      - portal_database
-      - portal_redis
-    volumes:
-      - ./backend/log:/app/log
+      - portal_backend
     networks:
       - portal_network
   
-  # portal_export:
-  #   container_name: portal_export
+  # portal_frontend:
+  #   container_name: portal_frontend
+  #   env_file:
+  #     - .env
   #   restart: always
   #   build:
-  #     context: ./export
+  #     context: ./portal-front
   #     dockerfile: Dockerfile
   #   ports: 
-  #     - 8081:8081
+  #     - 3000:3000
   #   depends_on:
   #     - portal_backend
   #   networks:
   #     - portal_network
-  
-  portal_frontend:
-    container_name: portal_frontend
-    env_file:
-      - .env
-    restart: always
-    build:
-      context: ./portal-front
-      dockerfile: Dockerfile
-    ports: 
-      - 3000:3000
-    depends_on:
-      - portal_backend
-    networks:
-      - portal_network
 
-  portal_nginx:
-    container_name: portal_nginx
-    image: nginx:alpine
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - 8000:80
-    depends_on:
-      - portal_backend
-      - portal_frontend
-    restart: always
-    networks:
-      - portal_network
+  # portal_nginx:
+  #   container_name: portal_nginx
+  #   image: nginx:alpine
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   ports:
+  #     - 8000:80
+  #   depends_on:
+  #     - portal_backend
+  #     - portal_frontend
+  #   restart: always
+  #   networks:
+  #     - portal_network
 
 
 volumes:

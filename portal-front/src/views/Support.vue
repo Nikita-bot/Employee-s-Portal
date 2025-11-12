@@ -15,7 +15,10 @@
             <h3>Создание заявки в техническую поддержку</h3>
             <p>Опишите проблему как можно подробнее. В зависимости от типа проблемы могут появиться дополнительные поля для уточнения.</p>
           </div>
-
+          <div class="urgent-checkbox">
+            <input type="checkbox" id="urgentRequest" v-model="form.urgent">
+            <label for="urgentRequest">Срочная заявка (критическая проблема)</label>
+          </div>
           <form @submit.prevent="submitForm">
             <div class="form-group">
               <label for="problemType">Тип проблемы *</label>
@@ -42,10 +45,13 @@
                   <label for="printerModel">Какой принтер</label>
                   <select id="printerModel" v-model="form.printerModel">
                     <option value="">Выберите модель</option>
-                    <option value="hp-laserjet">HP LaserJet Pro</option>
-                    <option value="canon-mf">Canon i-SENSYS MF</option>
-                    <option value="epson-workforce">Epson Workforce</option>
-                    <option value="xerox-versalink">Xerox VersaLink</option>
+                    <option 
+                      v-for="printer in printers" 
+                      :key="printer.id" 
+                      :value="printer.value"
+                    >
+                      {{ printer.name }}
+                    </option>
                     <option value="other">Другая модель</option>
                   </select>
                 </div>
@@ -53,12 +59,13 @@
                   <label for="printerLocation">Где стоит принтер</label>
                   <select id="printerLocation" v-model="form.printerLocation">
                     <option value="">Выберите местоположение</option>
-                    <option value="reception-1">Регистратура 1 этаж</option>
-                    <option value="reception-2">Регистратура 2 этаж</option>
-                    <option value="cardiology">Кардиологическое отделение</option>
-                    <option value="surgery">Хирургическое отделение</option>
-                    <option value="therapy">Терапевтическое отделение</option>
-                    <option value="administration">Администрация</option>
+                    <option 
+                      v-for="room in rooms" 
+                      :key="room.id" 
+                      :value="room.value"
+                    >
+                      {{ room.name }}
+                    </option>
                     <option value="other">Другое место</option>
                   </select>
                 </div>
@@ -72,17 +79,18 @@
                 <label for="computerLocation">Где стоит компьютер</label>
                 <select id="computerLocation" v-model="form.computerLocation">
                   <option value="">Выберите местоположение</option>
-                  <option value="reception-1">Регистратура 1 этаж</option>
-                  <option value="reception-2">Регистратура 2 этаж</option>
-                  <option value="doctor-office-305">Кабинет 305 (Кардиология)</option>
-                  <option value="doctor-office-412">Кабинет 412 (Хирургия)</option>
-                  <option value="nurses-station">Пост медсестер</option>
-                  <option value="administration">Администрация</option>
+                  <option 
+                    v-for="room in rooms" 
+                    :key="room.id" 
+                    :value="room.value"
+                  >
+                    {{ room.name }}
+                  </option>
                   <option value="other">Другое место</option>
                 </select>
               </div>
             </div>
-
+            
             <!-- Дополнительные поля для программ -->
             <div class="additional-fields" v-show="showSoftwareFields">
               <h4>Информация о программном обеспечении</h4>
@@ -91,11 +99,19 @@
                 <input type="text" id="computerName" v-model="form.computerName" 
                        placeholder="Например: PC-ADMIN-01 или USER-305">
               </div>
-            </div>
-
-            <div class="urgent-checkbox">
-              <input type="checkbox" id="urgentRequest" v-model="form.urgent">
-              <label for="urgentRequest">Срочная заявка (критическая проблема)</label>
+              <div class="form-group">
+                <label for="department">Отдел</label>
+                <select id="department" v-model="form.department">
+                  <option value="">Выберите отдел</option>
+                  <option 
+                    v-for="dept in departments" 
+                    :key="dept.id" 
+                    :value="dept.id"
+                  >
+                    {{ dept.name }}
+                  </option>
+                </select>
+              </div>
             </div>
 
             <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
@@ -103,7 +119,7 @@
             </button>
 
             <div class="success-message" v-show="showSuccess">
-              Заявка успешно создана! Номер вашей заявки: <strong>{{ ticketNumber }}</strong>
+              Заявка успешно создана!
             </div>
 
             <div class="error-message" v-show="showError">
@@ -131,8 +147,10 @@ const showSoftwareFields = ref(false)
 const showSuccess = ref(false)
 const showError = ref(false)
 const isSubmitting = ref(false)
-const ticketNumber = ref('')
 const taskList = ref([])
+const printers = ref([])
+const rooms = ref([])
+const departments = ref([])
 const errorMessage = ref('')
 
 const userStore = useUserStore()
@@ -148,13 +166,13 @@ const form = reactive({
   printerLocation: '',
   computerLocation: '',
   computerName: '',
+  department: '',
   urgent: false
 })
 
 const checkAdditionalFields = () => {
   const selectedTask = taskList.value.find(task => task.id === parseInt(form.problemType))
   if (!selectedTask) return
-  console.log(selectedTask)
   const taskName = selectedTask.name.toLowerCase()
   showPrinterFields.value = taskName.includes('принтер') || taskName.includes('картридж')
   showComputerFields.value = taskName.includes('компьютер')
@@ -166,20 +184,29 @@ const buildDescription = () => {
 
   if (showPrinterFields.value) {
     description += `\n\nДополнительная информация о принтере:`
-    if (form.printerModel) description += `\nМодель принтера: ${form.printerModel}`
-    if (form.printerLocation) description += `\nМестоположение: ${form.printerLocation}`
+    if (form.printerModel) {
+      const printer = printers.value.find(p => p.value === form.printerModel)
+      description += `\nМодель принтера: ${printer ? printer.name : form.printerModel}`
+    }
+    if (form.printerLocation) {
+      const room = rooms.value.find(r => r.value === form.printerLocation)
+      description += `\nМестоположение: ${room ? room.name : form.printerLocation}`
+    }
   }
 
   if (showComputerFields.value && form.computerLocation) {
-    description += `\n\nМестоположение компьютера: ${form.computerLocation}`
+    const room = rooms.value.find(r => r.value === form.computerLocation)
+    description += `\n\nМестоположение компьютера: ${room ? room.name : form.computerLocation}`
   }
 
-  if (showSoftwareFields.value && form.computerName) {
-    description += `\n\nИмя компьютера: ${form.computerName}`
-  }
-
-  if (form.urgent) {
-    description += `\n\n!!! СРОЧНАЯ ЗАЯВКА !!!`
+  if (showSoftwareFields.value) {
+    if (form.computerName) {
+      description += `\n\nИмя компьютера: ${form.computerName}`
+    }
+    if (form.department) {
+      const dept = departments.value.find(d => d.id === parseInt(form.department))
+      description += `\nОтдел: ${dept ? dept.name : form.department}`
+    }
   }
 
   return description
@@ -226,7 +253,6 @@ const createSupportTicket = async () => {
     })
 
     if (response.ok) {
-      ticketNumber.value = 'T' + Date.now().toString().slice(-6)
       showSuccess.value = true
       console.log('Заявка создана:', taskData)
       
@@ -247,7 +273,7 @@ const createSupportTicket = async () => {
 
 const loadTaskList = async () => {
   try {
-    const response = await fetch('/api/v1/tasks/support')
+    const response = await fetch('/api/v1/taskList/support')
     if (response.ok) {
       const data = await response.json()
       taskList.value = data.task_list || []
@@ -261,6 +287,68 @@ const loadTaskList = async () => {
   }
 }
 
+const loadDepartments = async () => {
+  try {
+    const response = await fetch('/api/v1/departments')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    } 
+
+    const responseData = await response.json()
+
+    if (!responseData.departments) {
+      throw new Error('Некорректная структура ответа: отсутствует свойство departments')
+    }
+
+    departments.value = responseData.departments
+
+  } catch (error) {
+    console.error('Ошибка загрузки отделов:', error)
+  }
+}
+
+const loadPrinters = async () => {
+  try {
+    const response = await fetch('/api/v1/printer')
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    } 
+
+    const responseData = await response.json()
+
+    if (!responseData.printers) {
+      throw new Error('Некорректная структура ответа: отсутствует свойство printers')
+    }
+
+    printers.value = responseData.printers
+
+  } catch (error) {
+    console.error('Ошибка загрузки принтеров:', error)
+  }
+}
+
+const loadRooms = async () => {
+  try {
+    const response = await fetch('/api/v1/room')
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const responseData = await response.json()
+    
+    if (!responseData.rooms) {
+      throw new Error('Некорректная структура ответа: отсутствует свойство rooms')
+    }
+    
+    rooms.value = responseData.rooms
+    
+  } catch (error) {
+    console.error('Ошибка загрузки помещений:', error)
+  }
+}
+
 const resetForm = () => {
   Object.assign(form, {
     problemType: '',
@@ -269,6 +357,7 @@ const resetForm = () => {
     printerLocation: '',
     computerLocation: '',
     computerName: '',
+    department: '',
     urgent: false
   })
   
@@ -281,6 +370,9 @@ const resetForm = () => {
 
 onMounted(() => {
   loadTaskList()
+  loadDepartments()
+  loadPrinters()
+  loadRooms()
 })
 </script>
 
@@ -400,6 +492,7 @@ onMounted(() => {
   padding: 1.5rem;
   border-radius: 6px;
   margin-top: 1rem;
+  margin-bottom: 1rem;
   border-left: 3px solid #f39c12;
 }
 

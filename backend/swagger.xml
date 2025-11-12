@@ -1,0 +1,508 @@
+swagger: '2.0'
+info:
+  title: Employee Portal API
+  description: API documentation for Employee Portal
+  version: 1.0.0
+host: 'localhost:8080'
+schemes:
+  - http
+basePath: /
+produces:
+  - application/json
+paths:
+  /api/v1/auth:
+    post:
+      summary: Authenticate user
+      description: Authenticate user with login and password
+      consumes: ["multipart/form-data"]
+      parameters:
+        - name: login
+          in: formData
+          description: User login
+          required: true
+          type: string
+        - name: password
+          in: formData
+          description: User password
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successful authentication
+          schema:
+            type: object
+            properties:
+              userId:
+                type: integer
+        '401':
+          description: Authentication failed
+  '/api/v1/user/{id}':
+    get:
+      summary: Get user by ID
+      description: Retrieve user information by user ID
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: User information retrieved successfully
+          schema:
+            type: object
+            properties:
+              user:
+                $ref: '#/definitions/User'
+        '400':
+          description: Invalid user ID
+        '401':
+          description: User not found
+  /api/v1/user/pass:
+    patch:
+      summary: Change user password
+      description: Change password for a user
+      consumes: ["multipart/form-data"]
+      parameters:
+        - name: id
+          in: formData
+          description: User ID
+          required: true
+          type: integer
+        - name: pass
+          in: formData
+          description: New password
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Password changed successfully
+        '400':
+          description: Invalid request body or missing parameters
+        '500':
+          description: Failed to change password
+  /api/v1/user/tg:
+    patch:
+      summary: Change user Telegram
+      description: Change Telegram handle for a user
+      consumes: ["multipart/form-data"]
+      parameters:
+        - name: user_id
+          in: formData
+          description: User ID
+          required: true
+          type: integer
+        - name: tg
+          in: formData
+          description: Telegram handle
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Telegram handle changed successfully
+        '500':
+          description: Failed to change Telegram handle
+  '/api/v1/tasks/user/{userId}':
+    get:
+      summary: Get all tasks for user
+      description: Retrieve all tasks for a specific user
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          schema:
+            type: object
+            properties:
+              initiator:
+                type: array
+                items:
+                  $ref: '#/definitions/Task'
+              executor:
+                type: array
+                items:
+                  $ref: '#/definitions/Task'
+        '401':
+          description: Invalid user ID
+        '501':
+          description: Failed to retrieve tasks
+  '/api/v1/tasks/{id}':
+    get:
+      summary: Get task by ID
+      description: Retrieve a specific task by its ID
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Task retrieved successfully
+          schema:
+            type: object
+            properties:
+              task:
+                $ref: '#/definitions/Task'
+        '401':
+          description: Invalid task ID
+        '501':
+          description: Failed to retrieve task
+    patch:
+      summary: Update task status
+      description: Update the status of a task
+      consumes: ["multipart/form-data"]
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          type: integer
+        - name: status
+          in: formData
+          description: New task status
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Task updated successfully
+        '400':
+          description: Invalid task ID or status
+        '500':
+          description: Failed to update task
+    delete:
+      summary: Delete task
+      description: Delete a task by its ID
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Task deleted successfully
+        '400':
+          description: Invalid task ID
+        '500':
+          description: Failed to delete task
+  /api/v1/tasks:
+    post:
+      summary: Create new task
+      description: Create a new task for a user
+      parameters:
+        - name: task
+          in: body
+          description: Task object to create
+          required: true
+          schema:
+            $ref: '#/definitions/UserTaskCreate'
+      responses:
+        '200':
+          description: Task created successfully
+        '401':
+          description: Bad request
+        '501':
+          description: Failed to create task
+  '/api/v1/tasks/executor/{id}':
+    patch:
+      summary: Change task executor
+      description: Change the executor of a task
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          type: integer
+        - name: executor_id
+          in: body
+          description: New executor ID
+          required: true
+          schema:
+            type: object
+            properties:
+              executor_id:
+                type: integer
+      responses:
+        '200':
+          description: Task executor changed successfully
+        '400':
+          description: Invalid task ID
+        '500':
+          description: Failed to change executor
+  /api/v1/taskList:
+    get:
+      summary: Get all tasks
+      description: Retrieve all tasks
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          schema:
+            type: object
+            properties:
+              task_list:
+                type: array
+                items:
+                  $ref: '#/definitions/Task'
+        '501':
+          description: Failed to retrieve tasks
+  /api/v1/taskList/support:
+    get:
+      summary: Get IT tasks
+      description: Retrieve all IT support tasks
+      responses:
+        '200':
+          description: IT tasks retrieved successfully
+          schema:
+            type: object
+            properties:
+              task_list:
+                type: array
+                items:
+                  $ref: '#/definitions/Task'
+        '501':
+          description: Failed to retrieve IT tasks
+  '/api/v1/taskList/users/{task_id}':
+    get:
+      summary: Get available users for task
+      description: Retrieve users available for a specific task
+      parameters:
+        - name: task_id
+          in: path
+          description: Task ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Available users retrieved successfully
+          schema:
+            type: object
+            properties:
+              user_list:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+        '501':
+          description: Failed to retrieve available users
+  /roles:
+    get:
+      summary: Get all roles
+      description: Retrieve all user roles
+      responses:
+        '200':
+          description: Roles retrieved successfully
+          schema:
+            type: string
+  '/api/v1/depatments/user/{user_task_id}':
+    get:
+      summary: Get users on departments
+      description: Retrieve users associated with departments for a specific task
+      parameters:
+        - name: user_task_id
+          in: path
+          description: User task ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Users retrieved successfully
+          schema:
+            type: object
+            properties:
+              users:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+        '400':
+          description: Invalid ID
+        '401':
+          description: Failed to retrieve users
+  /api/v1/comments:
+    post:
+      summary: Create new comment
+      description: Create a new comment for a task
+      parameters:
+        - name: comment
+          in: body
+          description: Comment object to create
+          required: true
+          schema:
+            $ref: '#/definitions/CommentCreate'
+      responses:
+        '200':
+          description: Comment created successfully
+        '401':
+          description: Bad request
+        '501':
+          description: Failed to create comment
+  '/api/v1/comments/{taskId}':
+    get:
+      summary: Get all comments for task
+      description: Retrieve all comments for a specific task
+      parameters:
+        - name: taskId
+          in: path
+          description: Task ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Comments retrieved successfully
+          schema:
+            type: object
+            properties:
+              comments:
+                type: array
+                items:
+                  $ref: '#/definitions/Comment'
+        '401':
+          description: Invalid task ID
+        '501':
+          description: Failed to retrieve comments
+  '/api/v1/journal/{task_id}':
+    get:
+      summary: Get journal for task
+      description: Retrieve journal entries for a specific task
+      parameters:
+        - name: task_id
+          in: path
+          description: Task ID
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: Journal retrieved successfully
+          schema:
+            type: object
+            properties:
+              journal:
+                type: array
+                items:
+                  $ref: '#/definitions/Journal'
+        '400':
+          description: Invalid task ID
+  /api/v1/news:
+    post:
+      summary: Create news
+      description: Create a new news item
+      parameters:
+        - name: news
+          in: body
+          description: News object to create
+          required: true
+          schema:
+            $ref: '#/definitions/NewsCreate'
+      responses:
+        '200':
+          description: News created successfully
+        '400':
+          description: Invalid parameters
+        '500':
+          description: Failed to create news
+    get:
+      summary: Get all news
+      description: Retrieve all news items
+      responses:
+        '200':
+          description: News retrieved successfully
+          schema:
+            type: object
+            properties:
+              news:
+                type: array
+                items:
+                  $ref: '#/definitions/News'
+        '500':
+          description: Failed to retrieve news
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+      password:
+        type: string
+      tg:
+        type: string
+  Task:
+    type: object
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+      description:
+        type: string
+      status:
+        type: integer
+      executor_id:
+        type: integer
+      initiator_id:
+        type: integer
+  UserTaskCreate:
+    type: object
+    properties:
+      title:
+        type: string
+      description:
+        type: string
+      executor_id:
+        type: integer
+      initiator_id:
+        type: integer
+  Comment:
+    type: object
+    properties:
+      id:
+        type: integer
+      task_id:
+        type: integer
+      text:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+  CommentCreate:
+    type: object
+    properties:
+      task_id:
+        type: integer
+      text:
+        type: string
+  Journal:
+    type: object
+    properties:
+      id:
+        type: integer
+      task_id:
+        type: integer
+      action:
+        type: string
+      timestamp:
+        type: string
+        format: date-time
+  News:
+    type: object
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+  NewsCreate:
+    type: object
+    properties:
+      title:
+        type: string
+      content:
+        type: string

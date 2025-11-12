@@ -76,24 +76,55 @@ func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
-	u.l.Info("IN USER TASK SERVICE :: CREATE TASK WITH EXECUTOR")
-	roles, _ := u.r.GetTaskRoles(uc.Task)
-	u.l.Debug("IN SERVICE", zap.Any("User:", uc.Initiator))
-	for _, role := range roles {
-		ut, err := u.r.GetUserAndCountTasksByRoleID(role, uc.BranchID, uc.Initiator, isSupp)
-		if err != nil {
-			return err
-		}
-		uc.Executor = findMinCountTask(ut)
+	u.l.Info("IN USER TASK SERVICE :: CREATE TASK WITHOUT EXECUTOR")
 
+	role, _ := u.r.GetTaskRoles(uc.Task)
+
+	ut, err := u.r.GetUserAndCountTasksByRoleID(role, uc.BranchID, uc.Initiator, isSupp)
+	if err != nil {
+		return err
+	}
+
+	if isSupp {
+		uc.Executor = findMinCountTask(ut)
 		err = u.r.CreateTask(uc)
 		if err != nil {
 			return err
 		}
-
+		return nil
 	}
+
+	executors := make(map[int]entity.UserCountTask)
+
+	for _, user := range ut {
+
+		ex, ok := executors[user.UserDep]
+		if !ok {
+			executors[user.UserDep] = user
+			continue
+		}
+
+		if user.Count < ex.Count {
+			executors[user.UserDep] = user
+		}
+
+		// u.l.Debug("IN SERVICE", zap.Int("Iteration", i+1), zap.Any("Executors:", executors))
+	}
+
+	u.l.Debug("IN USER TASK SERVICE", zap.Any("Executors:", executors))
+
+	for _, user := range executors {
+		u.l.Debug("IN SERVICE", zap.Any("Executor for Mass:", user))
+		uc.Executor = user.UserID
+		err = u.r.CreateTask(uc)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

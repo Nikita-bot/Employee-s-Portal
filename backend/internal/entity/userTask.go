@@ -26,7 +26,8 @@ type (
 	}
 
 	UserCountTask struct {
-		UserID int `db:"user_id"`
-		Count  int `db:"task_count"`
+		UserID  int `db:"user_id"`
+		UserDep int `db:"user_department"`
+		Count   int `db:"task_count"`
 	}
 )

@@ -92,6 +92,19 @@ var depInBranch2 = map[string]string{
 	"эндоскопическое отделение №2":                                         "",
 }
 
+const (
+	RoleAdministration    = "Администрация"
+	RoleMedicalManagement = "Медицинские руководители"
+	RoleDoctors           = "Врачи"
+	RoleNursingStaff      = "Средний медицинский персонал"
+	RoleJuniorMedical     = "Младший медицинский персонал"
+	RoleTechnical         = "Технический персонал"
+	RoleEconomic          = "Экономика и бухгалтерия"
+	RoleIT                = "IT-специалисты"
+	RoleHR                = "Кадры и административный персонал"
+	RoleSupport           = "Обслуживающий персонал"
+)
+
 func main() {
 
 	conf := config.New()

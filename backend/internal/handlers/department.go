@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"portal/internal/service"
 	"strconv"
 
@@ -29,6 +30,21 @@ func NewDepartmentHandler(s service.DepartmentService, l *zap.Logger, e *echo.Ec
 
 func (dh departmentHandler) Handle() {
 	dh.e.GET("/api/v1/depatments/user/:user_task_id", dh.GetUsersOnDepaertmets)
+	dh.e.GET("/api/v1/departments", dh.GetAll)
+}
+
+func (h departmentHandler) GetAll(c echo.Context) error {
+	h.l.DPanic("IN HANDLER :: GET ALL Departments")
+
+	dep, err := h.s.GetAllDepartment()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	response := make(map[string]interface{})
+	response["departments"] = dep
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (dh departmentHandler) GetUsersOnDepaertmets(c echo.Context) error {

@@ -15,6 +15,8 @@ type Service struct {
 	CommentService    CommentService
 	JournalService    JournalService
 	NewsService       NewsService
+	PrinterService    PrinterService
+	RoomService       RoomService
 }
 
 func NewService(l *zap.Logger, r repository.Repository) Service {
@@ -28,5 +30,7 @@ func NewService(l *zap.Logger, r repository.Repository) Service {
 		JournalService:    NewJournalService(r.JournalRepo, l),
 		NewsService:       NewNewsService(r.NewsRepo, l),
 		UserTaskService:   NewUserTaskService(r.UserTaskRepo, l, ts),
+		PrinterService:    NewPrinterService(r.PrinterRepository, l),
+		RoomService:       NewRoomService(r.RoomRepository, l),
 	}
 }

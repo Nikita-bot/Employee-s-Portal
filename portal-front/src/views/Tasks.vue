@@ -85,6 +85,7 @@
             <label for="taskExecutor">Исполнитель *</label>
             <select id="taskExecutor" v-model="newTask.executor" required>
               <option value="">Выберите исполнителя</option>
+              <option value="0">Назначить автоматически</option>
               <option v-for="user in availableUsers" :key="user.id" :value="user.id">
                 {{ user.surname }} {{ user.name }} {{ user.patronymic }} ({{ user.employee.position }})
               </option>
@@ -606,13 +607,14 @@ const closeCreateTaskModal = () => {
 
 const createNewTask = async () => {
   // Проверка обязательных полей
-  if (!newTask.task_id || !newTask.description) {
+  if (!newTask.task_id || !newTask.description ) {
     createTaskError.value = 'Пожалуйста, заполните все обязательные поля'
     return
   }
 
   createTaskError.value = ''
   isCreatingTask.value = true
+  console.log(newTask.executor)
 
   const taskData = {
       task_id: parseInt(newTask.task_id),
