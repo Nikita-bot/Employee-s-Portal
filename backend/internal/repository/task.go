@@ -41,8 +41,14 @@ func (tr taskRepo) GetAvailableUsers(task_id int) ([]entity.UserMainData, error)
 			u.phone,
 			u.email,
 			u.tg_link,
-			u.tg_id
+			u.tg_id,
+			e.id AS "employee.id",
+			e.tab_num AS "employee.tab_num",
+			e.position AS "employee.position",
+			e.depart_id AS "employee.depart_id",
+			e.branch_id AS "employee.branch_id"
 		FROM users u
+		LEFT JOIN employee e ON u.id = e.user_id 
 		join user_role ur on u.id = ur.user_id
 		join task_roles tr on ur.role_id = tr.role_id
 		WHERE tr.task_id = $1 

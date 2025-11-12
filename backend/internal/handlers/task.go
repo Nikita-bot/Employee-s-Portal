@@ -29,8 +29,8 @@ func NewTaskHandler(s service.TaskService, l *zap.Logger, e *echo.Echo) TaskHand
 
 func (th taskHandler) Handle() {
 	th.e.GET("/api/v1/taskList", th.getAllTask)
-	th.e.GET("/api/v1/tasks/support", th.getITTask)
-	th.e.GET("/api/v1/tasks/users/:task_id", th.getAvailableUsers)
+	th.e.GET("/api/v1/taskList/support", th.getITTask)
+	th.e.GET("/api/v1/taskList/users/:task_id", th.getAvailableUsers)
 }
 
 func (th taskHandler) getAvailableUsers(c echo.Context) error {

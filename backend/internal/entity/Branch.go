@@ -5,4 +5,8 @@ type (
 		ID   int    `json:"id" db:"id"`
 		Name string `json:"name" db:"name"`
 	}
+
+	BranchCreate struct {
+		Name string `json:"name" db:"name"`
+	}
 )

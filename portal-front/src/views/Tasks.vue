@@ -81,6 +81,23 @@
               </option>
             </select>
           </div>
+          <div class="form-group" v-if="selectedTaskType?.type !== 'mass'">
+            <label for="taskExecutor">Исполнитель *</label>
+            <select id="taskExecutor" v-model="newTask.executor" required>
+              <option value="">Выберите исполнителя</option>
+              <option v-for="user in availableUsers" :key="user.id" :value="user.id">
+                {{ user.surname }} {{ user.name }} {{ user.patronymic }} ({{ user.employee.position }})
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group" v-else>
+            <label>Исполнитель</label>
+            <div class="mass-task-info">
+              Для массовых задач исполнитель назначается автоматически
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="taskDescription">Описание *</label>
             <textarea id="taskDescription" v-model="newTask.description" 
@@ -125,7 +142,7 @@
             <select v-else v-model="selectedTask.executor_id" @change="updateTaskExecutor">
               <option value="">Выберите исполнителя</option>
               <option v-for="user in availableUsers" :key="user.id" :value="user.id">
-                {{ user.surname }} {{ user.name }} {{ user.patronymic }}
+                {{ user.surname }} {{ user.name }} {{ user.patronymic }} ({{ user.employee.position }})
               </option>
             </select>
           </div>
@@ -372,6 +389,10 @@ const filteredTasks = computed(() => {
   return filtered
 })
 
+const selectedTaskType = computed(() => {
+  return taskTypes.value.find(type => type.id === parseInt(newTask.task_id))
+})
+
 const canChangeExecutor = computed(() => {
   return (selectedTask.initiator?.id == userStore.userId || 
           selectedTask.executor?.id == userStore.userId) && 
@@ -523,7 +544,7 @@ const loadAvailableUsers = async (taskId = null) => {
     const controller = new AbortController()
     abortControllers.availableUsers = controller
 
-    let url = '/api/v1/tasks/users'
+    let url = '/api/v1/taskList/users'
     if (taskId) {
       url += `/${taskId}`
     }
@@ -595,7 +616,7 @@ const createNewTask = async () => {
 
   const taskData = {
       task_id: parseInt(newTask.task_id),
-      executor: 0, // Автоматически выберется
+      executor: selectedTaskType.value?.type === 'mass' ? 0 : parseInt(newTask.executor),
       initiator: parseInt(userStore.userId),
       description: newTask.description,
       status: 0, // Создана

@@ -70,6 +70,15 @@ func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
 	isSupp = taskType.Type == "support"
 	u.l.Debug("IN CREATE TASK SERVICE :: ", zap.Bool("Is Support", isSupp))
 
+	if uc.Executor != 0 {
+		u.l.Info("IN USER TASK SERVICE :: CREATE TASK WITH EXECUTOR", zap.Int("Executor", uc.Executor))
+		err = u.r.CreateTask(uc)
+		if err != nil {
+			return err
+		}
+	}
+
+	u.l.Info("IN USER TASK SERVICE :: CREATE TASK WITH EXECUTOR")
 	roles, _ := u.r.GetTaskRoles(uc.Task)
 	u.l.Debug("IN SERVICE", zap.Any("User:", uc.Initiator))
 	for _, role := range roles {
@@ -85,7 +94,6 @@ func (u userTaskService) CreateTask(uc entity.UserTaskCreate) error {
 		}
 
 	}
-
 	return nil
 }
 
