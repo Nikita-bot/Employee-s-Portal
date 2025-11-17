@@ -30,13 +30,6 @@
               </select>
             </div>
 
-            <div class="form-group">
-              <label for="problemDescription">Подробное описание *</label>
-              <textarea id="problemDescription" v-model="form.problemDescription" 
-                        placeholder="Опишите проблему подробно, укажите что именно не работает, когда началась проблема..." 
-                        required></textarea>
-            </div>
-
             <!-- Дополнительные поля для принтера -->
             <div class="additional-fields" v-show="showPrinterFields">
               <h4>Информация о принтере</h4>
@@ -53,6 +46,19 @@
                       {{ printer.name }}
                     </option>
                     <option value="other">Другая модель</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="department">Отдел</label>
+                  <select id="department" v-model="form.department">
+                    <option value="">Выберите отдел</option>
+                    <option 
+                      v-for="dept in departments" 
+                      :key="dept.id" 
+                      :value="dept.id"
+                    >
+                      {{ dept.name }}
+                    </option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -75,6 +81,19 @@
             <!-- Дополнительные поля для компьютера -->
             <div class="additional-fields" v-show="showComputerFields">
               <h4>Информация о компьютере</h4>
+              <div class="form-group">
+                <label for="department">Отдел</label>
+                <select id="department" v-model="form.department">
+                  <option value="">Выберите отдел</option>
+                  <option 
+                    v-for="dept in departments" 
+                    :key="dept.id" 
+                    :value="dept.id"
+                  >
+                    {{ dept.name }}
+                  </option>
+                </select>
+              </div>
               <div class="form-group">
                 <label for="computerLocation">Где стоит компьютер</label>
                 <select id="computerLocation" v-model="form.computerLocation">
@@ -99,20 +118,15 @@
                 <input type="text" id="computerName" v-model="form.computerName" 
                        placeholder="Например: PC-ADMIN-01 или USER-305">
               </div>
-              <div class="form-group">
-                <label for="department">Отдел</label>
-                <select id="department" v-model="form.department">
-                  <option value="">Выберите отдел</option>
-                  <option 
-                    v-for="dept in departments" 
-                    :key="dept.id" 
-                    :value="dept.id"
-                  >
-                    {{ dept.name }}
-                  </option>
-                </select>
-              </div>
             </div>
+
+            <div class="form-group">
+              <label for="problemDescription">Подробное описание *</label>
+              <textarea id="problemDescription" v-model="form.problemDescription" 
+                        placeholder="Опишите проблему подробно, укажите что именно не работает, когда началась проблема..." 
+                        required></textarea>
+            </div>
+
 
             <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
               {{ isSubmitting ? 'Отправка...' : 'Создать заявку' }}
@@ -174,9 +188,9 @@ const checkAdditionalFields = () => {
   const selectedTask = taskList.value.find(task => task.id === parseInt(form.problemType))
   if (!selectedTask) return
   const taskName = selectedTask.name.toLowerCase()
-  showPrinterFields.value = taskName.includes('принтер') || taskName.includes('картридж')
+  showPrinterFields.value = taskName.includes('принтер') || taskName.includes('картридж') || taskName.includes('тонер')
   showComputerFields.value = taskName.includes('компьютер')
-  showSoftwareFields.value = taskName.includes('программ') || taskName.includes('ариадн')
+  showSoftwareFields.value = taskName.includes('программ') || taskName.includes('ариадн') || taskName.includes('портал')
 }
 
 const buildDescription = () => {

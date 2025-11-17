@@ -154,6 +154,10 @@ func SeedInitialData(db *sqlx.DB) error {
 		return fmt.Errorf("seeding rooms: %w", err)
 	}
 
+	if err := seedTaskRoles(db); err != nil {
+		return fmt.Errorf("seeding task roles: %w", err)
+	}
+
 	return nil
 }
 
@@ -244,5 +248,61 @@ func seedRooms(db *sqlx.DB) error {
 			}
 		}
 	}
+	return nil
+}
+
+func seedTaskRoles(db *sqlx.DB) error {
+	// Создаем временную структуру для удобства
+	type TaskRoleMapping struct {
+		TaskName string `db:"task_name"`
+		RoleName string `db:"role_name"`
+	}
+
+	mappings := []TaskRoleMapping{
+		// Массовые операции
+		{TaskName: "Трудоустройство", RoleName: "Массовые операции - Трудоустройство"},
+		{TaskName: "Увольнение", RoleName: "Массовые операции - Увольнение"},
+
+		// Техподдержка
+		{TaskName: "Не работает компьютер", RoleName: "Техподдержка - Компьютеры"},
+		{TaskName: "Не работает принтер", RoleName: "Техподдержка - Принтеры"},
+		{TaskName: "Закончился тонер", RoleName: "Техподдержка - Принтеры"},
+		{TaskName: "Не работает программа", RoleName: "Техподдержка - Программы"},
+		{TaskName: "Не работает портал", RoleName: "Техподдержка - Порталы"},
+		{TaskName: "Не работает Ариадна", RoleName: "Техподдержка - Ариадна"},
+	}
+
+	for _, mapping := range mappings {
+		// Получаем ID задачи и роли
+		var taskID, roleID int
+
+		err := db.Get(&taskID, "SELECT id FROM task_list WHERE name = $1", mapping.TaskName)
+		if err != nil {
+			return fmt.Errorf("getting task ID for %s: %w", mapping.TaskName, err)
+		}
+
+		err = db.Get(&roleID, "SELECT id FROM roles WHERE name = $1", mapping.RoleName)
+		if err != nil {
+			return fmt.Errorf("getting role ID for %s: %w", mapping.RoleName, err)
+		}
+
+		// Проверяем, существует ли уже связь
+		var existing int
+		err = db.Get(&existing,
+			"SELECT 1 FROM task_roles WHERE task_id = $1 AND role_id = $2",
+			taskID, roleID)
+
+		if err != nil {
+			// Связи нет, добавляем
+			_, err := db.Exec(`
+				INSERT INTO task_roles (task_id, role_id) 
+				VALUES ($1, $2)
+			`, taskID, roleID)
+			if err != nil {
+				return fmt.Errorf("inserting task-role mapping: %w", err)
+			}
+		}
+	}
+
 	return nil
 }
