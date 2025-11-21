@@ -231,6 +231,7 @@ func (u userRepo) GetUserByID(id int) (entity.UserMainData, error) {
 	query := `
 		SELECT 
 			u.id,
+			u.login,
 			u.name,
 			u.surname,
 			u.patronymic,

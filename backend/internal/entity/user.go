@@ -25,10 +25,10 @@ type (
 
 	UserMainData struct {
 		ID         int      `json:"id" db:"id"`
+		Login      string   `json:"login" db:"login"`
 		Name       string   `json:"name" db:"name"`
 		Surname    string   `json:"surname" db:"surname"`
 		Patronymic string   `json:"patronymic" db:"patronymic"`
-		Department string   `json:"department" db:"department"`
 		Phone      string   `json:"phone" db:"phone"`
 		Email      string   `json:"email" db:"email"`
 		TgLink     string   `json:"tg_link" db:"tg_link"`

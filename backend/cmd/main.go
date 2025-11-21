@@ -55,9 +55,9 @@ func main() {
 
 	service := service.NewService(logger, repo)
 
-	handler := handlers.NewHandler(logger, service, server)
+	handler := handlers.NewHandler(logger, service, server, conf.Secret)
 
-	err = handler.Handle(conf.Port)
+	err = handler.Handle(conf.Port, conf.Secret)
 	if err != http.ErrServerClosed {
 		logger.Error(err.Error())
 		panic("Не удалось запустить сервер")

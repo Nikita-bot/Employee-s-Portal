@@ -24,6 +24,13 @@ func InitServer(c config.Config) (*echo.Echo, error) {
 		AllowMethods: []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 	}))
 
+	// e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
+	// 	TokenLookup:    "header:X-CSRF-Token",
+	// 	CookiePath:     "/",
+	// 	CookieSecure:   true,
+	// 	CookieHTTPOnly: true,
+	// }))
+
 	e.GET("/api/h", func(ctx echo.Context) error { return ctx.String(200, "Ok") })
 
 	return e, nil

@@ -4,6 +4,7 @@ import (
 	"portal/internal/service"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"go.uber.org/zap"
 )
 
@@ -21,23 +22,30 @@ type Handler struct {
 	RoomHandler       RoomHandler
 }
 
-func NewHandler(l *zap.Logger, s service.Service, e *echo.Echo) *Handler {
+func NewHandler(l *zap.Logger, s service.Service, e *echo.Echo, secret string) *Handler {
 	return &Handler{
 		e:                 e,
-		UserHandler:       NewUserHandler(s.UserService, l, e),
-		UserTaskHandler:   NewUserTaskHandler(s.UserTaskService, l, e),
-		TaskHandler:       NewTaskHandler(s.TaskService, l, e),
-		RoleHandler:       NewRoleHandler(s.RoleService, l, e),
-		DepartmentHandler: NewDepartmentHandler(s.DepartmentService, l, e),
-		CommentHandler:    NewCommentHandler(s.CommentService, l, e),
-		JournalHandler:    NewJournalHandler(s.JournalService, l, e),
-		NewsHandler:       NewNewsHandler(s.NewsService, l, e),
-		PrinterHandler:    NewPrinterHandler(s.PrinterService, l, e),
-		RoomHandler:       NewRoomHandler(s.RoomService, l, e),
+		UserHandler:       NewUserHandler(s.UserService, l, e, secret),
+		UserTaskHandler:   NewUserTaskHandler(s.UserTaskService, l, e, secret),
+		TaskHandler:       NewTaskHandler(s.TaskService, l, e, secret),
+		RoleHandler:       NewRoleHandler(s.RoleService, l, e, secret),
+		DepartmentHandler: NewDepartmentHandler(s.DepartmentService, l, e, secret),
+		CommentHandler:    NewCommentHandler(s.CommentService, l, e, secret),
+		JournalHandler:    NewJournalHandler(s.JournalService, l, e, secret),
+		NewsHandler:       NewNewsHandler(s.NewsService, l, e, secret),
+		PrinterHandler:    NewPrinterHandler(s.PrinterService, l, e, secret),
+		RoomHandler:       NewRoomHandler(s.RoomService, l, e, secret),
 	}
 }
 
-func (h *Handler) Handle(port string) error {
+var IsLoggedIn echo.MiddlewareFunc
+
+func (h *Handler) Handle(port, secret string) error {
+
+	IsLoggedIn = middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey:  []byte(secret),
+		TokenLookup: "cookie:token",
+	})
 
 	h.UserHandler.Handle()
 	h.UserTaskHandler.Handle()

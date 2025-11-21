@@ -15,23 +15,25 @@ type (
 	}
 
 	printerHandler struct {
-		s service.PrinterService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.PrinterService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewPrinterHandler(s service.PrinterService, l *zap.Logger, e *echo.Echo) PrinterHandler {
+func NewPrinterHandler(s service.PrinterService, l *zap.Logger, e *echo.Echo, secret string) PrinterHandler {
 	return printerHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (h printerHandler) Handle() {
-	h.e.POST("/api/v1/printer", h.PostPrinter)
-	h.e.GET("/api/v1/printer", h.GetAllPrinters)
+	h.e.POST("/api/v1/printer", h.PostPrinter, IsLoggedIn)
+	h.e.GET("/api/v1/printer", h.GetAllPrinters, IsLoggedIn)
 }
 
 func (h printerHandler) PostPrinter(c echo.Context) error {

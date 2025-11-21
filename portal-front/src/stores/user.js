@@ -28,6 +28,10 @@ export const useUserStore = defineStore('user', () => {
       })
       
       if (!response.ok) {
+        if (response.status === 401) {
+          handleUnauthorized()
+          throw new Error('Unauthorized')
+        }
         throw new Error('Failed to fetch user data')
       }
       
@@ -80,6 +84,11 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('userId')
   }
   
+  function handleUnauthorized() {
+    // Очищаем все данные пользователя из localStorage при 401 ошибке
+    logout()
+  }
+  
   function initialize() {
     const savedUser = localStorage.getItem('user')
     const savedUserId = localStorage.getItem('userId')
@@ -97,6 +106,18 @@ export const useUserStore = defineStore('user', () => {
     }
   }
   
+  // Перехватчик для обработки 401 ошибок во всех запросах
+  async function apiRequest(url, options = {}) {
+    const response = await fetch(url, options)
+    
+    if (response.status === 401) {
+      handleUnauthorized()
+      throw new Error('Unauthorized')
+    }
+    
+    return response
+  }
+  
   return {
     user,
     userId,
@@ -105,6 +126,8 @@ export const useUserStore = defineStore('user', () => {
     fetchUserData,
     login,
     logout,
-    initialize
+    initialize,
+    apiRequest,
+    handleUnauthorized
   }
 })

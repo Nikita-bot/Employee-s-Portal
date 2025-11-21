@@ -15,23 +15,25 @@ type (
 	}
 
 	newsHandler struct {
-		s service.NewsService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.NewsService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewNewsHandler(s service.NewsService, l *zap.Logger, e *echo.Echo) NewsHandler {
+func NewNewsHandler(s service.NewsService, l *zap.Logger, e *echo.Echo, secret string) NewsHandler {
 	return newsHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (h newsHandler) Handle() {
-	h.e.POST("/api/v1/news", h.PostNews)
-	h.e.GET("/api/v1/news", h.GetAllNews)
+	h.e.POST("/api/v1/news", h.PostNews, IsLoggedIn)
+	h.e.GET("/api/v1/news", h.GetAllNews, IsLoggedIn)
 }
 
 func (h newsHandler) PostNews(c echo.Context) error {

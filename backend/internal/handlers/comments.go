@@ -14,17 +14,19 @@ type (
 		Handle()
 	}
 	commentHandler struct {
-		s service.CommentService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.CommentService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewCommentHandler(s service.CommentService, l *zap.Logger, e *echo.Echo) CommentHandler {
+func NewCommentHandler(s service.CommentService, l *zap.Logger, e *echo.Echo, secret string) CommentHandler {
 	return &commentHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 

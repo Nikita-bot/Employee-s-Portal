@@ -1,0 +1,516 @@
+openapi: 3.0.0
+info:
+  title: Employee Portal API
+  description: API для управления задачами сотрудников
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Development server
+paths:
+  /api/v1/auth:
+    post:
+      summary: Аутентификация пользователя
+      description: Аутентификация пользователя по логину и паролю
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                login:
+                  type: string
+                  description: Логин пользователя
+                password:
+                  type: string
+                  description: Пароль пользователя
+              required:
+                - login
+                - password
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: integer
+                    description: ID пользователя
+        '401':
+          description: Неверные учетные данные
+  /api/v1/user/{id}:
+    get:
+      summary: Получить информацию о пользователе
+      description: Получить информацию о пользователе по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Неавторизованный доступ
+  /api/v1/user/pass:
+    patch:
+      summary: Изменить пароль пользователя
+      description: Изменить пароль пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: ID пользователя
+                pass:
+                  type: string
+                  description: Новый пароль
+              required:
+                - id
+                - pass
+      responses:
+        '200':
+          description: Пароль успешно изменен
+        '400':
+          description: Некорректный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+  /api/v1/user/tg:
+    patch:
+      summary: Изменить Telegram пользователя
+      description: Изменить Telegram пользователя
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  description: ID пользователя
+                tg:
+                  type: string
+                  description: Telegram пользователя
+              required:
+                - user_id
+                - tg
+      responses:
+        '200':
+          description: Telegram успешно изменен
+        '500':
+          description: Внутренняя ошибка сервера
+  /api/v1/taskList:
+    get:
+      summary: Получить список всех задач
+      description: Получить список всех задач
+      responses:
+        '200':
+          description: Список задач
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+  /api/v1/taskList/support:
+    get:
+      summary: Получить список IT задач
+      description: Получить список IT задач
+      responses:
+        '200':
+          description: Список IT задач
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+  /api/v1/taskList/users/{task_id}:
+    get:
+      summary: Получить список доступных пользователей для задачи
+      description: Получить список доступных пользователей для задачи
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список доступных пользователей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserMainData'
+  /api/v1/tasks/user/{userId}:
+    get:
+      summary: Получить все задачи пользователя
+      description: Получить все задачи пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список задач пользователя
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  initiator:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserTask'
+                  executor:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserTask'
+  /api/v1/tasks/{id}:
+    get:
+      summary: Получить задачу по ID
+      description: Получить задачу по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Задача
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/UserTask'
+    patch:
+      summary: Выполнить задачу
+      description: Выполнить задачу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: integer
+                  description: Статус задачи (2 - выполнена)
+              required:
+                - status
+      responses:
+        '200':
+          description: Задача успешно выполнена
+        '500':
+          description: Внутренняя ошибка сервера
+    delete:
+      summary: Удалить задачу
+      description: Удалить задачу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Задача успешно удалена
+        '500':
+          description: Внутренняя ошибка сервера
+  /api/v1/tasks:
+    post:
+      summary: Создать задачу для пользователя
+      description: Создать задачу для пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserTaskCreate'
+      responses:
+        '200':
+          description: Задача успешно создана
+        '401':
+          description: Некорректный запрос
+        '501':
+          description: Внутренняя ошибка сервера
+  /api/v1/tasks/executor/{id}:
+    patch:
+      summary: Сменить исполнителя задачи
+      description: Сменить исполнителя задачи
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executor_id:
+                  type: integer
+                  description: ID нового исполнителя
+              required:
+                - executor_id
+      responses:
+        '200':
+          description: Исполнитель успешно изменен
+        '500':
+          description: Внутренняя ошибка сервера
+  /api/v1/news:
+    post:
+      summary: Создать новость
+      description: Создать новость
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewsCreate'
+      responses:
+        '200':
+          description: Новость успешно создана
+        '400':
+          description: Некорректный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+    get:
+      summary: Получить все новости
+      description: Получить все новости
+      responses:
+        '200':
+          description: Список новостей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  news:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/News'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        surname:
+          type: string
+        name:
+          type: string
+        patronymic:
+          type: string
+        login:
+          type: string
+        password:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+        snyls:
+          type: string
+        pasport_ser:
+          type: string
+        pasport_num:
+          type: string
+        pasport_date:
+          type: string
+        pasport_dep:
+          type: string
+        pasport_dep_key:
+          type: string
+        adress:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        tg_link:
+          type: string
+        tg_id:
+          type: string
+        employee:
+          $ref: '#/components/schemas/Employee'
+    UserMainData:
+      type: object
+      properties:
+        id:
+          type: integer
+        login:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        patronymic:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        tg_link:
+          type: string
+        tg_id:
+          type: string
+        employee:
+          $ref: '#/components/schemas/Employee'
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+        tab_num:
+          type: string
+        user_id:
+          type: integer
+        zanyatost:
+          type: string
+        start_date:
+          type: string
+        end_date:
+          type: string
+        position:
+          type: string
+        other_position:
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+        department:
+          type: string
+        branch:
+          type: string
+        branch_id:
+          type: integer
+    Position:
+      type: object
+      properties:
+        name:
+          type: string
+        department:
+          type: string
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+    UserTask:
+      type: object
+      properties:
+        id:
+          type: integer
+        task_id:
+          type: string
+        task_name:
+          type: string
+        executor:
+          $ref: '#/components/schemas/UserMainData'
+        initiator:
+          $ref: '#/components/schemas/UserMainData'
+        description:
+          type: string
+        status:
+          type: integer
+        priority:
+          type: integer
+        create_date:
+          type: string
+        execute_date:
+          type: string
+    UserTaskCreate:
+      type: object
+      properties:
+        task_id:
+          type: integer
+        executor:
+          type: integer
+        initiator:
+          type: integer
+        description:
+          type: string
+        status:
+          type: integer
+        priority:
+          type: integer
+        branch_id:
+          type: integer
+        create_date:
+          type: string
+    News:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          $ref: '#/components/schemas/User'
+        content:
+          type: string
+        date:
+          type: string
+    NewsCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        author:
+          type: integer
+        content:
+          type: string
+        date:
+          type: string

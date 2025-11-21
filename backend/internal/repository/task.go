@@ -35,6 +35,7 @@ func (tr taskRepo) GetAvailableUsers(task_id int) ([]entity.UserMainData, error)
 	query := `
 		SELECT 
 			u.id,
+			u.login,
 			u.name,
 			u.surname,
 			u.patronymic,

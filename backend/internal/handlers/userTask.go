@@ -16,27 +16,29 @@ type (
 		Handle()
 	}
 	userTaskHandler struct {
-		s service.UserTaskService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.UserTaskService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewUserTaskHandler(s service.UserTaskService, l *zap.Logger, e *echo.Echo) UserTaskHandler {
+func NewUserTaskHandler(s service.UserTaskService, l *zap.Logger, e *echo.Echo, secret string) UserTaskHandler {
 	return &userTaskHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (uh userTaskHandler) Handle() {
-	uh.e.GET("/api/v1/tasks/user/:userId", uh.getAllUserTask)        //Получить все задачи пользователя
-	uh.e.GET("/api/v1/tasks/:id", uh.getUserTaskByID)                //Получить задачу по id
-	uh.e.POST("/api/v1/tasks", uh.postUserTask)                      //Создать задачу для пользователя
-	uh.e.PATCH("/api/v1/tasks/:id", uh.patchUserTask)                //Выполнить задачу
-	uh.e.PATCH("/api/v1/tasks/executor/:id", uh.patchExecutorToTask) //Сменить исполнителя задачи
-	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask)              //Удалить задачу
+	uh.e.GET("/api/v1/tasks/user/:userId", uh.getAllUserTask, IsLoggedIn)        //Получить все задачи пользователя
+	uh.e.GET("/api/v1/tasks/:id", uh.getUserTaskByID, IsLoggedIn)                //Получить задачу по id
+	uh.e.POST("/api/v1/tasks", uh.postUserTask, IsLoggedIn)                      //Создать задачу для пользователя
+	uh.e.PATCH("/api/v1/tasks/:id", uh.patchUserTask, IsLoggedIn)                //Выполнить задачу
+	uh.e.PATCH("/api/v1/tasks/executor/:id", uh.patchExecutorToTask, IsLoggedIn) //Сменить исполнителя задачи
+	uh.e.DELETE("/api/v1/tasks/:id", uh.deleteUserTask, IsLoggedIn)              //Удалить задачу
 }
 
 func (uh userTaskHandler) patchExecutorToTask(c echo.Context) error {

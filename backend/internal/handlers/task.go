@@ -13,24 +13,26 @@ type (
 		Handle()
 	}
 	taskHandler struct {
-		s service.TaskService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.TaskService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewTaskHandler(s service.TaskService, l *zap.Logger, e *echo.Echo) TaskHandler {
+func NewTaskHandler(s service.TaskService, l *zap.Logger, e *echo.Echo, secret string) TaskHandler {
 	return &taskHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (th taskHandler) Handle() {
-	th.e.GET("/api/v1/taskList", th.getAllTask)
-	th.e.GET("/api/v1/taskList/support", th.getITTask)
-	th.e.GET("/api/v1/taskList/users/:task_id", th.getAvailableUsers)
+	th.e.GET("/api/v1/taskList", th.getAllTask, IsLoggedIn)
+	th.e.GET("/api/v1/taskList/support", th.getITTask, IsLoggedIn)
+	th.e.GET("/api/v1/taskList/users/:task_id", th.getAvailableUsers, IsLoggedIn)
 }
 
 func (th taskHandler) getAvailableUsers(c echo.Context) error {

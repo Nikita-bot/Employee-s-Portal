@@ -21,8 +21,9 @@ type Service struct {
 
 func NewService(l *zap.Logger, r repository.Repository) Service {
 	ts := NewTaskService(r.TaskRepo, l)
+	us := NewUserService(r.UserRepo, l)
 	return Service{
-		UserService:       NewUserService(r.UserRepo, l),
+		UserService:       us,
 		TaskService:       ts,
 		RoleService:       NewRoleService(r.RoleRepo, l),
 		DepartmentService: NewDepartmentService(r.DepartmentRepo, l),

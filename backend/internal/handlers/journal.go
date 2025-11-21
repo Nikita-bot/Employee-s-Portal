@@ -14,22 +14,24 @@ type (
 	}
 
 	journalHandler struct {
-		s service.JournalService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.JournalService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewJournalHandler(s service.JournalService, l *zap.Logger, e *echo.Echo) JournalHandler {
+func NewJournalHandler(s service.JournalService, l *zap.Logger, e *echo.Echo, secret string) JournalHandler {
 	return &journalHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (jh journalHandler) Handle() {
-	jh.e.GET("/api/v1/journal/:task_id", jh.GetJournal)
+	jh.e.GET("/api/v1/journal/:task_id", jh.GetJournal, IsLoggedIn)
 }
 
 func (jh journalHandler) GetJournal(c echo.Context) error {

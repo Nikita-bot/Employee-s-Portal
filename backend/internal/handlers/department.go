@@ -14,23 +14,25 @@ type (
 		Handle()
 	}
 	departmentHandler struct {
-		s service.DepartmentService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.DepartmentService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewDepartmentHandler(s service.DepartmentService, l *zap.Logger, e *echo.Echo) DepartmentHandler {
+func NewDepartmentHandler(s service.DepartmentService, l *zap.Logger, e *echo.Echo, secret string) DepartmentHandler {
 	return &departmentHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (dh departmentHandler) Handle() {
-	dh.e.GET("/api/v1/depatments/user/:user_task_id", dh.GetUsersOnDepaertmets)
-	dh.e.GET("/api/v1/departments", dh.GetAll)
+	dh.e.GET("/api/v1/depatments/user/:user_task_id", dh.GetUsersOnDepaertmets, IsLoggedIn)
+	dh.e.GET("/api/v1/departments", dh.GetAll, IsLoggedIn)
 }
 
 func (h departmentHandler) GetAll(c echo.Context) error {

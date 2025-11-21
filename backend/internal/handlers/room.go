@@ -15,23 +15,25 @@ type (
 	}
 
 	roomHandler struct {
-		s service.RoomService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.RoomService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewRoomHandler(s service.RoomService, l *zap.Logger, e *echo.Echo) RoomHandler {
+func NewRoomHandler(s service.RoomService, l *zap.Logger, e *echo.Echo, secret string) RoomHandler {
 	return roomHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (h roomHandler) Handle() {
-	h.e.POST("/api/v1/room", h.PostRoom)
-	h.e.GET("/api/v1/room", h.GetAllRooms)
+	h.e.POST("/api/v1/room", h.PostRoom, IsLoggedIn)
+	h.e.GET("/api/v1/room", h.GetAllRooms, IsLoggedIn)
 }
 
 func (h roomHandler) PostRoom(c echo.Context) error {

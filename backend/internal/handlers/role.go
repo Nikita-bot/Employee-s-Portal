@@ -12,22 +12,24 @@ type (
 		Handle()
 	}
 	roleHandler struct {
-		s service.RoleService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.RoleService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewRoleHandler(s service.RoleService, l *zap.Logger, e *echo.Echo) RoleHandler {
+func NewRoleHandler(s service.RoleService, l *zap.Logger, e *echo.Echo, secret string) RoleHandler {
 	return &roleHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (rh roleHandler) Handle() {
-	rh.e.GET("/roles", rh.getAllRole)
+	rh.e.GET("/roles", rh.getAllRole, IsLoggedIn)
 }
 
 func (rh roleHandler) getAllRole(c echo.Context) error {

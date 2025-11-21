@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"portal/internal/service"
 	"strconv"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 )
@@ -14,25 +16,27 @@ type (
 		Handle()
 	}
 	userHandler struct {
-		s service.UserService
-		l *zap.Logger
-		e *echo.Echo
+		s      service.UserService
+		l      *zap.Logger
+		e      *echo.Echo
+		secret string
 	}
 )
 
-func NewUserHandler(s service.UserService, l *zap.Logger, e *echo.Echo) UserHandler {
+func NewUserHandler(s service.UserService, l *zap.Logger, e *echo.Echo, secret string) UserHandler {
 	return &userHandler{
-		s: s,
-		l: l,
-		e: e,
+		s:      s,
+		l:      l,
+		e:      e,
+		secret: secret,
 	}
 }
 
 func (uh userHandler) Handle() {
 	uh.e.POST("/api/v1/auth", uh.Auth)
-	uh.e.GET("/api/v1/user/:id", uh.GetUserByID)
-	uh.e.PATCH("/api/v1/user/pass", uh.PatchUser)
-	uh.e.PATCH("/api/v1/user/tg", uh.PatchUserTG)
+	uh.e.GET("/api/v1/user/:id", uh.GetUserByID, IsLoggedIn)
+	uh.e.PATCH("/api/v1/user/pass", uh.PatchUser, IsLoggedIn)
+	uh.e.PATCH("/api/v1/user/tg", uh.PatchUserTG, IsLoggedIn)
 }
 
 func (uh userHandler) PatchUserTG(c echo.Context) error {
@@ -96,6 +100,26 @@ func (uh userHandler) Auth(c echo.Context) error {
 		return c.JSON(401, err.Error())
 	}
 
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["login"] = login
+	claims["id"] = id
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+
+	t, err := token.SignedString([]byte(uh.secret))
+	if err != nil {
+		return err
+	}
+
+	cookie := new(http.Cookie)
+	cookie.Name = "token"
+	cookie.Value = t
+	cookie.Path = "/"
+	cookie.HttpOnly = true
+	cookie.SameSite = http.SameSiteStrictMode
+	cookie.Expires = time.Now().Add(72 * time.Hour)
+	c.SetCookie(cookie)
+
 	request["userId"] = id
 
 	return c.JSON(200, request)
@@ -105,6 +129,12 @@ func (uh userHandler) GetUserByID(c echo.Context) error {
 	uh.l.Info("IN USER HANDLER :: GET USER BY ID")
 	var request = make(map[string]interface{})
 
+	userToken := c.Get("user").(*jwt.Token)
+	claims := userToken.Claims.(jwt.MapClaims)
+
+	tokenUserID := claims["id"].(float64)
+	tokenLogin := claims["login"].(string)
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.String(400, "ID MUST BE INT")
@@ -113,6 +143,10 @@ func (uh userHandler) GetUserByID(c echo.Context) error {
 	user, err := uh.s.GetUserByID(id)
 	if err != nil {
 		return c.JSON(401, err.Error())
+	}
+
+	if userToken == nil || float64(user.ID) != tokenUserID || user.Login != tokenLogin {
+		return c.String(401, "Unauthorized")
 	}
 
 	request["user"] = user
